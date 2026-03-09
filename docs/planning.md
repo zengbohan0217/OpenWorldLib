@@ -10,15 +10,30 @@ The representative methods currently being integrated are listed below. We warml
 | **Solaris** | [paper](https://arxiv.org/pdf/2602.22208) | [code](https://github.com/solaris-wm/solaris) | Navigation Video Generation (multiplayer Minecraft world modeling) |
 | **FantasyWorld** | [paper](https://arxiv.org/pdf/2509.21657) | [code](https://github.com/Fantasy-AMAP/fantasy-world) | 3D Scene Generation (unified video and 3D prediction) |
 | **Ctrl-World** | [paper](https://arxiv.org/pdf/2510.10125) | [code](https://github.com/Robert-gyj/Ctrl-World) | VLA / Robot Manipulation (controllable generative world model) |
+| **Cambrian-S** | [paper](https://arxiv.org/pdf/2511.04670) | [code](https://github.com/cambrian-mllm/cambrian-s) | Spatial Reasoning |
 
 > If you have methods you’d like to integrate (e.g., new world models, evaluation benchmarks, or inference pipelines), feel free to open an Issue or submit a PR directly.
+
+
+### Todo List
+
+Status Legend: ✅ Completed; 🚧 In Progress; 🔄 Ongoing; 📝 Not Started.
+
+- ✅ Integrate multiple world model tasks into a single unified framework.
+- 🔄 Continuously add cutting-edge and valuable world model-related works to OpenWorldLib.
+- 🚧 Support more works related to long-video generation.
+- 🚧 Support more works related to autonomous driving.
+- 🚧 Optimize the contribution workflow to make it easier for other contributors to submit PRs, and continuously refactor the OpenWorldLib codebase.
+- 🔄 Provide comprehensive documentation and detailed explanations for the interactions within each pipeline.
+- 📝 Support inference data parallelism across all pipelines.
+- 🔄 Streamline the codebase and simplify the outputs of the pipelines.
 
 
 ### Code Optimization
 - The current repository may still contain some redundant code, which we will further streamline;
 - The interactions between different modules are not yet seamless enough. We will work towards enabling more flexible and natural integration between components;
 - The performance of some existing methods still requires further improvement, specifically:
-  - The sky layers generated in wonderworld are not yet satisfactory;
+  - The rendering effectiveness of vggt should improve;
 
 
 ### Roadmap

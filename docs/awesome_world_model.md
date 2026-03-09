@@ -220,6 +220,8 @@
 
 -**WorldCanvas** · [[Paper]](https://arxiv.org/pdf/2512.16924) [[Code]](https://github.com/pPetrichor/WorldCanvas)
 
+-**RealWonder** · [[Paper]](https://arxiv.org/pdf/2603.05449) [[Code]](https://github.com/liuwei283/RealWonder)
+
 </details>
 
 <details>

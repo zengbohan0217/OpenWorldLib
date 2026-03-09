@@ -11,6 +11,10 @@
 
 [English](README.md) | [中文](README_zh.md)
 
+扩展仓库：[[三维生成]](https://github.com/zengbohan0217/OpenWorldLib-extension-3D) | [[VLA]]() | [[仿真环境]]()
+
+<!-- Extension code link: -->
+
 </div>
 
 我们将世界模型定义为：**一种以感知为核心、具备交互与长期记忆能力的模型或框架，用于理解和预测复杂世界。** 因此，🎓 *多模态理解*、🤖 *视觉动作预测* 和 🖼️ *视觉生成* 都是世界模型需要完成的子任务。
