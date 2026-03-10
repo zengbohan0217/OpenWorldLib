@@ -12,11 +12,11 @@ URL="http://s3-us-west-2.amazonaws.com/ai2-thor-public/builds/thor-Linux64-f0825
 ZIP_NAME="thor-Linux64.zip"
 
 echo "=== [1/3] Installing the requirements ==="
-# pip install \
-#     "Flask==2.0.1" "Werkzeug==2.0.1" \
-#     numpy pyyaml requests progressbar2 \
-#     botocore aws-requests-auth compress_pickle objathor \
-#     Pillow opencv-python "python-xlib==0.21" "msgpack==1.1.2"
+pip install \
+    "Flask==2.0.1" "Werkzeug==2.0.1" \
+    numpy pyyaml requests progressbar2 \
+    botocore aws-requests-auth compress_pickle objathor \
+    Pillow opencv-python "python-xlib==0.21" "msgpack==1.1.2"
 
 echo "=== [2/3] Downloading and extracting AI2-THOR build ==="
 mkdir -p "$TARGET_DIR" && cd "$TARGET_DIR"
