@@ -15,20 +15,12 @@ class VGGTOperator(BaseOperator):
         self,
         operation_types=["visual_instruction", "action_instruction"],
         interaction_template=[
-            "single_view_reconstruction",
-            "multi_view_reconstruction", 
-            "camera_pose_estimation",
-            "depth_estimation",
-            "point_cloud_generation",
-            "point_tracking",
-            "move_left",
-            "move_right",
-            "move_up",
-            "move_down",
-            "zoom_in",
-            "zoom_out",
-            "rotate_left",
-            "rotate_right"
+            "forward", "backward", "left", "right",
+            "forward_left", "forward_right", "backward_left", "backward_right",
+            "camera_up", "camera_down",
+            "camera_l", "camera_r",
+            "camera_ul", "camera_ur", "camera_dl", "camera_dr",
+            "camera_zoom_in", "camera_zoom_out",
         ]
     ):
         super(VGGTOperator, self).__init__(operation_types=operation_types)

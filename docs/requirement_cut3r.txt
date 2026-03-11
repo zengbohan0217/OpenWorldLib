@@ -7,3 +7,4 @@ viser
 lpips
 h5py
 scikit-learn
+simple_knn
