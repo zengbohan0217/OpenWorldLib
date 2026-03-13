@@ -1,9 +1,32 @@
-from typing import Any
+from pathlib import Path
+from typing import Any, Union, cast
 
 import torch
+from PIL import Image as PILImage
+from torchvision.transforms import functional as TF
 
 from ...operators.giga_brain_0_operator import GigaBrain0Operator
 from ...synthesis.vla_generation.giga_brain_0.giga_brain_0_synthesis import GigaBrain0Synthesis
+
+# Supported image input types: torch.Tensor, PIL.Image, file path string or Path object
+ImageInput = Union[torch.Tensor, PILImage.Image, str, Path]
+
+
+def _to_tensor(img: ImageInput) -> torch.Tensor:
+    """Convert an image path, PIL.Image, or torch.Tensor into a float32 CHW Tensor."""
+    if isinstance(img, (str, Path)):
+        img = PILImage.open(img).convert('RGB')
+    if isinstance(img, PILImage.Image):
+        img = img.convert('RGB')
+        return TF.to_tensor(img)
+    if isinstance(img, torch.Tensor):
+        return img
+    raise TypeError(f'Unsupported image type: {type(img)}')
+
+
+def _convert_images(images: dict[str, ImageInput]) -> dict[str, torch.Tensor]:
+    """Convert each value in the images dict to a torch.Tensor."""
+    return {k: _to_tensor(v) for k, v in images.items()}
 
 
 class GigaBrain0Pipeline:
@@ -29,26 +52,61 @@ class GigaBrain0Pipeline:
     def from_pretrained(
         cls,
         model_path: str,
-        tokenizer_model_path: str,
-        fast_tokenizer_path: str,
-        embodiment_id: int,
-        state_norm_stats: dict,
-        action_norm_stats: dict,
-        delta_mask: list[bool],
-        original_action_dim: int,
+        required_components: dict[str, str] | None = None,
+        embodiment_id: int = 0,
+        state_norm_stats: dict | None = None,
+        action_norm_stats: dict | None = None,
+        delta_mask: list[bool] | None = None,
+        original_action_dim: int = 7,
         discrete_state_input: bool = True,
         autoregressive_inference_mode: bool = False,
         depth_img_prefix_name: str | None = None,
         device: str | torch.device | None = None,
+        weight_dtype: torch.dtype | None = None,
         present_img_keys: list[str] | None = None,
         **policy_kwargs: Any,
     ) -> 'GigaBrain0Pipeline':
+        """Load the pipeline from pretrained weights.
+
+        Args:
+            model_path: HuggingFace model ID or local path to the main model.
+            required_components: Additional components to load beyond the main model,
+                as a dict mapping component name to HuggingFace ID or local path.
+                e.g. ``{"tokenizer": "google/paligemma-3b-pt-224", "fast_tokenizer": "physical-intelligence/fast"}``.
+            device: Device to load all models onto, e.g. ``"cuda:0"`` or ``"cpu"``.
+            weight_dtype: Weight dtype for all models in the pipeline, e.g. ``torch.float16``
+                or ``torch.bfloat16``. Defaults to ``None`` (uses the model's original dtype).
+            embodiment_id: Robot embodiment ID.
+            state_norm_stats: State normalization statistics.
+            action_norm_stats: Action normalization statistics.
+            delta_mask: Boolean mask indicating which action dimensions are deltas.
+            original_action_dim: Original action dimension.
+            discrete_state_input: Whether to use discrete state input.
+            autoregressive_inference_mode: Whether to use autoregressive inference mode.
+            depth_img_prefix_name: Prefix name for depth image keys.
+            present_img_keys: List of image keys present in the current observation.
+            **policy_kwargs: Extra keyword arguments forwarded to the underlying policy.
+        """
+        required_components = required_components or {}
+
+        tokenizer_model_path = required_components.get('tokenizer', 'google/paligemma-3b-pt-224')
+        fast_tokenizer_path = required_components.get('fast_tokenizer', 'physical-intelligence/fast')
+
+        # Forward weight_dtype to the underlying model loader via torch_dtype
+        if weight_dtype is not None:
+            policy_kwargs.setdefault('torch_dtype', weight_dtype)
+
         synthesis = GigaBrain0Synthesis.from_pretrained(model_path, device=device, **policy_kwargs)
+
+        # Cast model weights to the requested dtype after loading
+        if weight_dtype is not None:
+            synthesis.policy.to(weight_dtype)
+
         operator = GigaBrain0Operator(
             embodiment_id=embodiment_id,
-            state_norm_stats=state_norm_stats,
-            action_norm_stats=action_norm_stats,
-            delta_mask=delta_mask,
+            state_norm_stats=state_norm_stats or {},
+            action_norm_stats=action_norm_stats or {},
+            delta_mask=delta_mask or [],
             tokenizer_model_path=tokenizer_model_path,
             fast_tokenizer_path=fast_tokenizer_path,
             resize_imgs_with_padding=(224, 224),
@@ -77,7 +135,7 @@ class GigaBrain0Pipeline:
 
     def process(
         self,
-        images: dict[str, torch.Tensor],
+        images: dict[str, ImageInput],
         task: str,
         state: torch.Tensor,
         pad_state: bool = True,
@@ -85,14 +143,15 @@ class GigaBrain0Pipeline:
     ):
         """Preprocess inputs (perception + interaction) to build model-ready tensors."""
         ori_device = state.device if state is not None else self.device
-        images = {k: v.to(self.device) for k, v in images.items()}
+        tensor_images: dict[str, torch.Tensor] = {k: _to_tensor(v).to(self.device) for k, v in images.items()}
         state = state.to(self.device)
 
-        images, img_masks, image_transform_params, state = self.operator.process_perception(images, state, pad_state=pad_state)
+        proc_images, img_masks, image_transform_params, proc_state = self.operator.process_perception(tensor_images, state, pad_state=pad_state)
+        state = cast(torch.Tensor, proc_state)
         lang_tokens, lang_masks, _, _, _, _ = self.operator.process_interaction(task=task, state=state)
 
         if add_batch_dim:
-            images = [img.unsqueeze(0) for img in images]
+            proc_images = [img.unsqueeze(0) for img in proc_images]
             img_masks = [mask.unsqueeze(0) for mask in img_masks]
             lang_tokens = lang_tokens.unsqueeze(0)
             lang_masks = lang_masks.unsqueeze(0)
@@ -101,7 +160,7 @@ class GigaBrain0Pipeline:
             emb_ids = torch.tensor(self.embodiment_id, dtype=torch.long, device=self.device)
 
         return {
-            'images': images,
+            'images': proc_images,
             'img_masks': img_masks,
             'lang_tokens': lang_tokens,
             'lang_masks': lang_masks,
@@ -114,7 +173,7 @@ class GigaBrain0Pipeline:
     @torch.no_grad()
     def __call__(
         self,
-        images: dict[str, torch.Tensor],
+        images: dict[str, ImageInput],
         task: str,
         state: torch.Tensor,
         enable_2d_traj_output: bool = False,
@@ -133,6 +192,7 @@ class GigaBrain0Pipeline:
             emb_ids=processed['emb_ids'],
             enable_2d_traj_output=enable_2d_traj_output,
         )
+        traj_pred: torch.Tensor | None = None
         if enable_2d_traj_output:
             pred_action, traj_pred = outputs
         else:
@@ -149,7 +209,7 @@ class GigaBrain0Pipeline:
             pred_action = pred_action[0]
         pred_action = pred_action.to(processed['ori_device'])
 
-        if enable_2d_traj_output:
+        if enable_2d_traj_output and traj_pred is not None:
             traj_pred = traj_pred[0]
             if 'resize_with_pad' in processed['image_transform_params']:
                 ratio = processed['image_transform_params']['resize_with_pad']['ratio']
@@ -162,40 +222,40 @@ class GigaBrain0Pipeline:
         return pred_action
 
     @torch.no_grad()
-    def predict_current_subtask(self, images: dict[str, torch.Tensor], task: str) -> list[str]:
+    def predict_current_subtask(self, images: dict[str, ImageInput], task: str) -> list[str]:
         tokenizer = self.operator.tokenizer
 
-        images = {k: v.to(self.device) for k, v in images.items()}
-        images, img_masks, _, _ = self.operator.process_perception(images, state=torch.empty(0), pad_state=False)
+        tensor_images: dict[str, torch.Tensor] = {k: _to_tensor(v).to(self.device) for k, v in images.items()}
+        proc_images, img_masks, _, _ = self.operator.process_perception(tensor_images, state=torch.empty(0), pad_state=False)
         lang_tokens, lang_masks, _, _, _, _ = self.operator.process_interaction(task=task)
 
-        for i in range(len(images)):
-            images[i] = images[i][None, ...]
+        for i in range(len(proc_images)):
+            proc_images[i] = proc_images[i][None, ...]
             img_masks[i] = img_masks[i][None, ...]
         lang_tokens = lang_tokens[None, ...]
         lang_masks = lang_masks[None, ...]
 
-        generated = self.generate_autoregressive_tokens(images, img_masks, lang_tokens, lang_masks)
+        generated = self.generate_autoregressive_tokens(proc_images, img_masks, lang_tokens, lang_masks)
         decoded = tokenizer.batch_decode(generated, skip_special_tokens=True)
         return decoded
 
     @torch.no_grad()
     def predict_autoregressive_actions(
-        self, images: dict[str, torch.Tensor], task: str, state: torch.Tensor, max_new_tokens: int = 200
+        self, images: dict[str, ImageInput], task: str, state: torch.Tensor, max_new_tokens: int = 200
     ) -> torch.Tensor:
         processed = self.process(images, task, state, pad_state=False, add_batch_dim=False)
-        images = processed['images']
-        img_masks = processed['img_masks']
-        lang_tokens = processed['lang_tokens']
-        lang_masks = processed['lang_masks']
-        state = processed['state']
+        proc_images: list[torch.Tensor] = processed['images']
+        img_masks: list[torch.Tensor] = processed['img_masks']
+        lang_tokens: torch.Tensor = processed['lang_tokens']
+        lang_masks: torch.Tensor = processed['lang_masks']
+        proc_state: torch.Tensor = processed['state']
         ori_device = processed['ori_device']
 
-        generated = self.generate_autoregressive_tokens(images, img_masks, lang_tokens, lang_masks, max_new_tokens=max_new_tokens)
+        generated = self.generate_autoregressive_tokens(proc_images, img_masks, lang_tokens, lang_masks, max_new_tokens=max_new_tokens)
 
         pred_action = self.operator.extract_actions(generated, self.synthesis.n_action_steps, self.original_action_dim)
         pred_action = pred_action.to(self.device)
-        pred_action = self.operator.process_output(pred_action, state, self.original_action_dim)
+        pred_action = self.operator.process_output(pred_action, proc_state, self.original_action_dim)
         if isinstance(pred_action, tuple):
             pred_action = pred_action[0]
         pred_action = pred_action.to(ori_device)
@@ -232,7 +292,7 @@ class GigaBrain0Pipeline:
             step_token = torch.where(finished, torch.tensor(eos_id, device=step_token.device), step_token)
             for i in range(len(generated)):
                 if not finished[i].item():
-                    generated[i].append(step_token[i].item())
+                    generated[i].append(int(step_token[i].item()))
             finished = finished | (step_token == eos_id)
             if torch.all(finished):
                 break
