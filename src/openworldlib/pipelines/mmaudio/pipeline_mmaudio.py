@@ -27,6 +27,7 @@ class MMAudioPipeline:
     def from_pretrained(
         cls, 
         model_path: str,
+        required_components: Dict[str, str],
         variant: str = "large_44k_v2",
         full_precision: bool = False,
         num_steps: int = 25,
@@ -54,6 +55,7 @@ class MMAudioPipeline:
         
         synthesis_model = MMAudioSynthesis.from_pretrained(
             model_path=model_path,
+            required_components=required_components,
             variant=variant,
             full_precision=full_precision,
             num_steps=num_steps,

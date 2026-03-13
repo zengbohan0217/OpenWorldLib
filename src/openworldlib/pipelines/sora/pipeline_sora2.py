@@ -5,7 +5,7 @@ from PIL import Image
 from typing import Optional, Union, Dict, Any
 
 from ...operators.sora2_operator import Sora2Operator
-from ...synthesis.visual_generation.sora.sora2.sora2_synthesis import Sora2Synthesis
+from ...synthesis.visual_generation.sora.sora2_synthesis import Sora2Synthesis
 
 
 

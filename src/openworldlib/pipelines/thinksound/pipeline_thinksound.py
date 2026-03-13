@@ -37,6 +37,7 @@ class ThinkSoundPipeline:
     def from_pretrained(
         cls, 
         model_path: str,
+        required_components: Optional[Dict[str, str]] = None,
         model_config: str = "src/openworldlib/synthesis/audio_generation/thinksound/ThinkSound/ThinkSound/configs/model_configs/thinksound.json",
         duration_sec: float = 8.0,
         seed: int = 42,
@@ -45,7 +46,7 @@ class ThinkSoundPipeline:
         cot_dir: str = "cot_coarse",
         results_dir: str = "results",
         scripts_dir: str = ".",
-        synchformer_ckpt_path: str = "ckpts/synchformer_state_dict.pth",
+        synchformer_ckpt_path: str = "hugid/synchformer_state_dict.pth",
         device: str = None, 
         logger_obj=None,
         **kwargs
@@ -55,6 +56,10 @@ class ThinkSoundPipeline:
         
         Args:
             model_path: 模型根目录或 HuggingFace repo_id
+            required_components: 额外依赖组件字典，目前支持：
+                - "clip_backbone_id": MetaCLIP 模型 ID 或本地路径
+                - "t5_model_id": T5 模型 ID 或本地路径
+                - "clip_processor_id": CLIP Processor 模型 ID 或本地路径
             model_config: 模型配置 json 路径
             duration_sec: 音频时长（秒）
             seed: 随机种子
@@ -70,6 +75,18 @@ class ThinkSoundPipeline:
         Returns:
             ThinkSoundPipeline 实例
         """
+        if required_components is None:
+            required_components = {
+                "clip_backbone_id": "facebook/metaclip-h14-fullcc2.5b",
+                "t5_model_id": "google/t5-v1_1-xl",
+                "clip_processor_id": "openai/clip-vit-large-patch14",
+            }
+        else:
+            required_components = dict(required_components)
+            required_components.setdefault("clip_backbone_id", "facebook/metaclip-h14-fullcc2.5b")
+            required_components.setdefault("t5_model_id", "google/t5-v1_1-xl")
+            required_components.setdefault("clip_processor_id", "openai/clip-vit-large-patch14")
+
         if logger_obj:
             logger_obj.info("Loading ThinkSound pipeline...")
         
@@ -93,6 +110,7 @@ class ThinkSoundPipeline:
             results_dir=results_dir,
             scripts_dir=scripts_dir,
             synchformer_ckpt_path=synchformer_ckpt_path,
+            required_components=required_components,
         )
         
         pipeline = cls(

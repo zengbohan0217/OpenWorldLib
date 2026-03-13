@@ -14,7 +14,6 @@ import torchaudio
 import numpy as np
 from loguru import logger
 from lightning.pytorch import seed_everything
-from prefigure.prefigure import get_all_args, push_wandb_config
 from huggingface_hub import snapshot_download, hf_hub_download
 
 from .ThinkSound.ThinkSound.models import create_model_from_config
@@ -68,6 +67,7 @@ def load_models(
         model = torch.compile(model)
     
     # 加载主模型权重
+    print(f"Loading main model weights from {ckpt_path}")
     model.load_state_dict(torch.load(ckpt_path))
 
     # 加载 VAE 权重
@@ -161,14 +161,14 @@ class ThinkSoundSynthesis(BaseSynthesis):
             
             # 主模型权重路径
             if ckpt_dir is None:
-                if os.path.exists(os.path.join(model_root, "thinksound.ckpt")):
-                    ckpt_dir = os.path.join(model_root, "thinksound.ckpt")
-                elif os.path.exists(os.path.join(model_root, "thinksound_light.ckpt")):
+                if os.path.exists(os.path.join(model_root, "thinksound_light.ckpt")):
                     ckpt_dir = os.path.join(model_root, "thinksound_light.ckpt")
-                elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound.ckpt")):
-                    ckpt_dir = os.path.join(model_root, "ckpts", "thinksound.ckpt")
+                elif os.path.exists(os.path.join(model_root, "thinksound.ckpt")):
+                    ckpt_dir = os.path.join(model_root, "thinksound.ckpt")
                 elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound_light.ckpt")):
                     ckpt_dir = os.path.join(model_root, "ckpts", "thinksound_light.ckpt")
+                elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound.ckpt")):
+                    ckpt_dir = os.path.join(model_root, "ckpts", "thinksound.ckpt")
             
             # VAE 路径
             if pretransform_ckpt_path is None:
@@ -195,14 +195,14 @@ class ThinkSoundSynthesis(BaseSynthesis):
             
             # 尝试查找模型文件（根据 HuggingFace 仓库的实际结构）
             if ckpt_dir is None:
-                if os.path.exists(os.path.join(model_root, "thinksound.ckpt")):
-                    ckpt_dir = os.path.join(model_root, "thinksound.ckpt")
-                elif os.path.exists(os.path.join(model_root, "thinksound_light.ckpt")):
+                if os.path.exists(os.path.join(model_root, "thinksound_light.ckpt")):
                     ckpt_dir = os.path.join(model_root, "thinksound_light.ckpt")
-                elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound.ckpt")):
-                    ckpt_dir = os.path.join(model_root, "ckpts", "thinksound.ckpt")
+                elif os.path.exists(os.path.join(model_root, "thinksound.ckpt")):
+                    ckpt_dir = os.path.join(model_root, "thinksound.ckpt")
                 elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound_light.ckpt")):
                     ckpt_dir = os.path.join(model_root, "ckpts", "thinksound_light.ckpt")
+                elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound.ckpt")):
+                    ckpt_dir = os.path.join(model_root, "ckpts", "thinksound.ckpt")
 
             if pretransform_ckpt_path is None:
                 if os.path.exists(os.path.join(model_root, "vae.ckpt")):

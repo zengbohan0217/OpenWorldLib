@@ -5,7 +5,7 @@ from pathlib import Path
 from http import HTTPStatus
 
 from ...operators.wan_2p5_operator import Wan2p5Operator
-from ...synthesis.visual_generation.wan.wan_2p5.wan_2p5_synthesis import Wan2p5Synthesis
+from ...synthesis.visual_generation.wan.wan_2p5_synthesis import Wan2p5Synthesis
 
 
 class Wan2p5Pipeline:

@@ -1,5 +1,7 @@
 from typing import Literal, Optional
 import json
+import os
+from pathlib import Path
 import open_clip
 import torch
 import torch.nn as nn
@@ -17,6 +19,54 @@ import logging
 from data_utils.ext.synchformer import Synchformer
 
 log = logging.getLogger()
+
+# 统一控制 HuggingFace 模型的下载路径：
+# 会下载到「当前运行目录」下的 huggingface_cache/ 里
+THINKSOUND_HF_CACHE_DIR = os.path.join(os.getcwd(), "huggingface_cache")
+os.makedirs(THINKSOUND_HF_CACHE_DIR, exist_ok=True)
+
+
+def _resolve_local_or_repo(path_or_repo: str) -> str:
+    """
+    参考 MMAudio / Cosmos 的风格：
+    - 如果字符串对应的本地路径存在（文件或目录），优先当作本地路径使用；
+    - 否则当作 HuggingFace repo_id / model_id 交给 transformers.from_pretrained 处理。
+    """
+    p = Path(path_or_repo).expanduser()
+    if not p.exists():
+        return path_or_repo
+
+    if p.is_file():
+        return str(p)
+
+    # 兼容 HuggingFace Hub 的本地缓存结构：
+    # models--org--repo/{blobs,refs,snapshots} 或者直接指向 snapshots/ 目录。
+    # transformers.from_pretrained 需要的是 snapshots/<hash>/ 这种“包含真实文件”的目录，
+    # 直接传 models--org--repo 根目录会找不到 pytorch_model.bin / model.safetensors。
+    try:
+        # if user points to ".../snapshots"
+        if p.name == "snapshots" and p.is_dir():
+            children = [c for c in p.iterdir() if c.is_dir()]
+            children.sort()
+            return str(children[0]) if children else str(p)
+
+        snapshots_dir = p / "snapshots"
+        if snapshots_dir.exists() and snapshots_dir.is_dir():
+            ref_main = p / "refs" / "main"
+            if ref_main.exists():
+                rev = ref_main.read_text(encoding="utf-8").strip()
+                candidate = snapshots_dir / rev
+                if candidate.exists() and candidate.is_dir():
+                    return str(candidate)
+            # fallback: first snapshot dir
+            children = [c for c in snapshots_dir.iterdir() if c.is_dir()]
+            children.sort()
+            return str(children[0]) if children else str(p)
+    except Exception:
+        # 解析失败就退回原路径（至少不影响普通本地目录）
+        pass
+
+    return str(p)
 
 def patch_clip(clip_model):
     # a hack to make it output last hidden states
@@ -57,17 +107,40 @@ class FeaturesUtils(nn.Module):
         vae_ckpt: Optional[str] = None,
         vae_config: Optional[str] = None,
         synchformer_ckpt: Optional[str] = None,
+        clip_backbone_id: str = "facebook/metaclip-h14-fullcc2.5b",
+        t5_model_id: str = "google/t5-v1_1-xl",
+        clip_processor_id: str = "openai/clip-vit-large-patch14",
         enable_conditions: bool = True,
         need_vae_encoder: bool = True,
     ):
         super().__init__()
 
         if enable_conditions:
-            self.clip_model = AutoModel.from_pretrained("facebook/metaclip-h14-fullcc2.5b")
+            # 允许将默认的 repo_id 替换成本地路径（与 MMAudio 的 required_components 处理方式一致）：
+            # - 若调用方通过 required_components / CLI 传入自定义路径或 repo_id，则优先使用该值
+            # - 若保持默认，则使用内置的模型 ID，并自动下载到 THINKSOUND_HF_CACHE_DIR。
+            clip_backbone_id = _resolve_local_or_repo(clip_backbone_id)
+            t5_id = _resolve_local_or_repo(t5_model_id)
+            clip_processor_id = _resolve_local_or_repo(clip_processor_id)
+
+            self.clip_model = AutoModel.from_pretrained(
+                clip_backbone_id,
+                cache_dir=THINKSOUND_HF_CACHE_DIR,
+            )
             self.clip_model = patch_clip(self.clip_model)
-            self.t5_tokenizer = AutoTokenizer.from_pretrained("google/t5-v1_1-xl")
-            self.t5_model = T5EncoderModel.from_pretrained("google/t5-v1_1-xl")
-            self.clip_processor = AutoProcessor.from_pretrained("openai/clip-vit-large-patch14")
+            self.t5_tokenizer = AutoTokenizer.from_pretrained(
+                t5_id,
+                cache_dir=THINKSOUND_HF_CACHE_DIR,
+                use_fast=False,
+            )
+            self.t5_model = T5EncoderModel.from_pretrained(
+                t5_id,
+                cache_dir=THINKSOUND_HF_CACHE_DIR,
+            )
+            self.clip_processor = AutoProcessor.from_pretrained(
+                clip_processor_id,
+                cache_dir=THINKSOUND_HF_CACHE_DIR,
+            )
             # self.clip_preprocess = Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
             #                                  std=[0.26862954, 0.26130258, 0.27577711])
             self.synchformer = Synchformer()

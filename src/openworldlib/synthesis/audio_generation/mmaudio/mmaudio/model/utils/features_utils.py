@@ -1,4 +1,5 @@
 from typing import Literal, Optional
+from pathlib import Path
 
 import open_clip
 import torch
@@ -37,6 +38,7 @@ class FeaturesUtils(nn.Module):
         self,
         *,
         tod_vae_ckpt: Optional[str] = None,
+        clip_model_path: Optional[str] = None,
         bigvgan_vocoder_ckpt: Optional[str] = None,
         synchformer_ckpt: Optional[str] = None,
         enable_conditions: bool = True,
@@ -46,8 +48,14 @@ class FeaturesUtils(nn.Module):
         super().__init__()
 
         if enable_conditions:
-            self.clip_model = create_model_from_pretrained('hf-hub:apple/DFN5B-CLIP-ViT-H-14-384',
-                                                           return_transform=False)
+            # 将 CLIP 权重下载到当前工程目录下，避免占用系统盘缓存
+            clip_cache_dir = Path.cwd() / "hf_cache" / "open_clip"
+            clip_cache_dir.mkdir(parents=True, exist_ok=True)
+            self.clip_model = create_model_from_pretrained(
+                clip_model_path,
+                return_transform=False,
+                cache_dir=str(clip_cache_dir),
+            )
             self.clip_preprocess = Normalize(mean=[0.48145466, 0.4578275, 0.40821073],
                                              std=[0.26862954, 0.26130258, 0.27577711])
             self.clip_model = patch_clip(self.clip_model)

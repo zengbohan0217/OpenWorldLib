@@ -6,7 +6,7 @@ from typing import Optional, Union, Dict, Any, List
 from PIL import Image
 
 from ...operators.veo3_operator import Veo3Operator
-from ...synthesis.visual_generation.veo.veo3.veo3_synthesis import Veo3Synthesis
+from ...synthesis.visual_generation.veo.veo3_synthesis import Veo3Synthesis
 
 
 class Veo3Pipeline:

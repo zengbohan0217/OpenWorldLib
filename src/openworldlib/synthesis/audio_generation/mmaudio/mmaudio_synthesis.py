@@ -20,8 +20,119 @@ torch.backends.cudnn.allow_tf32 = True
 
 log = logging.getLogger()
 
-def load_models(variant: str, full_precision: bool, num_steps: int,
-                model_path, device, logger_obj):
+def _maybe_resolve_hf_cache_snapshot_dir(
+    maybe_dir: str | os.PathLike,
+    *,
+    expected_files: tuple[str, ...],
+) -> str:
+    """
+    将 HuggingFace 的本地缓存目录（例如 models--org--repo/ 或 snapshots/）解析到真实 snapshot 目录。
+
+    支持以下输入：
+    - 直接指向 snapshot 的目录（包含 expected_files）→ 原样返回
+    - 指向 models--org--repo/ → 读取 refs/main 选取 snapshots/<hash>；否则取第一个 snapshot
+    - 指向 .../snapshots/ → 取第一个子目录
+    """
+    p = Path(maybe_dir).expanduser()
+    if not p.exists():
+        return str(maybe_dir)
+
+    if p.is_file():
+        p = p.parent
+
+    def _has_expected_files(d: Path) -> bool:
+        return all((d / f).exists() for f in expected_files)
+
+    if _has_expected_files(p):
+        return str(p)
+
+    # If user points to ".../snapshots"
+    if p.name == "snapshots" and p.is_dir():
+        children = [c for c in p.iterdir() if c.is_dir()]
+        children.sort()
+        for c in children:
+            if _has_expected_files(c):
+                return str(c)
+        return str(children[0]) if children else str(p)
+
+    # If user points to "models--org--repo" root
+    snapshots_dir = p / "snapshots"
+    if snapshots_dir.exists() and snapshots_dir.is_dir():
+        # Prefer refs/main -> snapshot hash
+        ref_main = p / "refs" / "main"
+        if ref_main.exists():
+            try:
+                rev = ref_main.read_text(encoding="utf-8").strip()
+                candidate = snapshots_dir / rev
+                if candidate.exists() and candidate.is_dir():
+                    return str(candidate)
+            except Exception:
+                pass
+
+        children = [c for c in snapshots_dir.iterdir() if c.is_dir()]
+        children.sort()
+        for c in children:
+            if _has_expected_files(c):
+                return str(c)
+        return str(children[0]) if children else str(p)
+
+    return str(p)
+
+
+def _normalize_required_components_paths(required_components: Dict[str, str]) -> Dict[str, str]:
+    """
+    仿照 Cosmos 的实现方式：
+    - 如果 Path(x).exists()：按“本地文件/目录”处理
+    - 否则：按“远端 HuggingFace repo_id / schema”处理（保留原样，走原下载/缓存逻辑）
+
+    同时适配 MMAudio 的两个组件：
+    - CLIP(open_clip): 需要 open_clip_config.json + open_clip_pytorch_model.bin
+    - BigVGANv2(44k): 需要 config.json + bigvgan_generator.pt
+    """
+    out = dict(required_components or {})
+
+    # --- CLIP (open_clip) ---
+    clip_model_path = out.get("clip_model_path")
+    if isinstance(clip_model_path, str) and clip_model_path:
+        # open_clip 已支持 schema：hf-hub:... / local-dir:...
+        if not clip_model_path.startswith(("hf-hub:", "local-dir:")):
+            p = Path(clip_model_path).expanduser()
+            if p.exists():
+                clip_dir = _maybe_resolve_hf_cache_snapshot_dir(
+                    str(p),
+                    expected_files=("open_clip_config.json", "open_clip_pytorch_model.bin"),
+                )
+                clip_dir_p = Path(clip_dir)
+                if (clip_dir_p / "open_clip_config.json").exists() and (clip_dir_p / "open_clip_pytorch_model.bin").exists():
+                    # open_clip 要求本地目录使用 local-dir: schema
+                    out["clip_model_path"] = f"local-dir:{clip_dir_p.resolve()}"
+
+    # --- BigVGANv2 (44k) ---
+    vocoder_44k = out.get("vocoder_ckpt_path_44k")
+    if isinstance(vocoder_44k, str) and vocoder_44k:
+        p = Path(vocoder_44k).expanduser()
+        if p.exists():
+            vocoder_dir = _maybe_resolve_hf_cache_snapshot_dir(
+                str(p),
+                expected_files=("config.json", "bigvgan_generator.pt"),
+            )
+            vocoder_dir_p = Path(vocoder_dir)
+            if (vocoder_dir_p / "config.json").exists() and (vocoder_dir_p / "bigvgan_generator.pt").exists():
+                # BigVGANv2.from_pretrained 支持直接传入本地目录
+                out["vocoder_ckpt_path_44k"] = str(vocoder_dir_p.resolve())
+
+    return out
+
+
+def load_models(
+    variant: str,
+    full_precision: bool,
+    num_steps: int,
+    model_path,
+    device,
+    logger_obj,
+    required_components,
+):
     """
     加载 MMAudio 模型
     
@@ -72,13 +183,24 @@ def load_models(variant: str, full_precision: bool, num_steps: int,
 
     if logger_obj:
         logger_obj.info("Loading feature utils...")
+
+    required_components = _normalize_required_components_paths(required_components)
     
+    # vocoder_ckpt_path 支持两种形式：
+    # - 16k: 使用 modelconfig 中的本地 BigVGAN 权重路径
+    # - 44k: 使用 BigVGANv2 的 HuggingFace repo_id（默认 nvidia/bigvgan_v2_44khz_128band_512x）
+    if getattr(model, "mode", None) == "44k":
+        vocoder_ckpt_path = required_components.get("vocoder_ckpt_path_44k", "nvidia/bigvgan_v2_44khz_128band_512x")
+    else:
+        vocoder_ckpt_path = model.bigvgan_16k_path
+
     feature_utils = FeaturesUtils(
         tod_vae_ckpt=model.vae_path,
+        clip_model_path=required_components["clip_model_path"],
         synchformer_ckpt=model.synchformer_ckpt,
         enable_conditions=True,
         mode=model.mode,
-        bigvgan_vocoder_ckpt=model.bigvgan_16k_path,
+        bigvgan_vocoder_ckpt=vocoder_ckpt_path,
         need_vae_encoder=False
     ).to(device, dtype).eval()
 
@@ -95,7 +217,7 @@ class MMAudioSynthesis(BaseSynthesis):
     MMAudio 生成合成类，提供统一的接口用于音频生成
     """
     def __init__(self, variant: str, full_precision: bool, num_steps: int,
-                 net, feature_utils, fm, seq_cfg, model_config, device, logger_obj):
+                 net, feature_utils, fm, seq_cfg, model_config, device, logger_obj, required_components):
         """
         初始化 MMAudioSynthesis
         
@@ -121,7 +243,7 @@ class MMAudioSynthesis(BaseSynthesis):
         self.fm = fm
         self.seq_cfg = seq_cfg
         self.model_config = model_config
-
+        self.required_components = required_components
         # 初始化随机数生成器
         self.rng = torch.Generator(device=device)
         
@@ -132,6 +254,7 @@ class MMAudioSynthesis(BaseSynthesis):
     def from_pretrained(
         cls,
         model_path,
+        required_components: Dict[str, str],
         variant: str = "large_44k_v2",
         full_precision: bool = False,
         num_steps: int = 25,
@@ -144,6 +267,7 @@ class MMAudioSynthesis(BaseSynthesis):
         
         Args:
             model_path: 预训练模型路径，可以是本地路径或者hugid路径
+            required_components: 所需的组件，包含 tod_vae_ckpt, clip_model_path
             variant: 模型变体名称
             full_precision: 是否使用全精度（float32）
             num_steps: FlowMatching 推理步数
@@ -177,6 +301,7 @@ class MMAudioSynthesis(BaseSynthesis):
             model_path=model_path,
             device=device,
             logger_obj=logger_inst,
+            required_components=required_components,
         )
         
         return cls(
@@ -189,7 +314,8 @@ class MMAudioSynthesis(BaseSynthesis):
             seq_cfg=seq_cfg,
             model_config=model_config,
             device=device,
-            logger_obj=logger_inst
+            logger_obj=logger_inst,
+            required_components=required_components,
         )
 
     @torch.no_grad()

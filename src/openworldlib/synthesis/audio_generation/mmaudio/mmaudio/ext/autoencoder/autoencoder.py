@@ -1,4 +1,5 @@
 from typing import Literal, Optional
+from pathlib import Path
 
 import torch
 import torch.nn as nn
@@ -27,8 +28,22 @@ class AutoEncoderModule(nn.Module):
             assert vocoder_ckpt_path is not None
             self.vocoder = BigVGAN(vocoder_ckpt_path).eval()
         elif mode == '44k':
-            self.vocoder = BigVGANv2.from_pretrained('nvidia/bigvgan_v2_44khz_128band_512x',
-                                                     use_cuda_kernel=False)
+            # 44k 使用 BigVGANv2：支持传入 HuggingFace repo_id 或保持默认 repo_id
+            repo_or_path = vocoder_ckpt_path or 'nvidia/bigvgan_v2_44khz_128band_512x'
+            # 将 BigVGANv2 权重下载到当前工程目录下，避免占用系统盘缓存
+            bigvgan_cache_dir = Path.cwd() / "hf_cache" / "bigvgan_v2"
+            bigvgan_cache_dir.mkdir(parents=True, exist_ok=True)
+            # 调用官方 from_pretrained，并显式提供所有需要的参数，以适配当前 _from_pretrained 签名
+            self.vocoder = BigVGANv2.from_pretrained(
+                repo_or_path,
+                use_cuda_kernel=False,
+                cache_dir=str(bigvgan_cache_dir),
+                force_download=False,
+                proxies=None,
+                resume_download=False,
+                local_files_only=False,
+                token=None,
+            )
             self.vocoder.remove_weight_norm()
         else:
             raise ValueError(f'Unknown mode: {mode}')

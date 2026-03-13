@@ -26,7 +26,8 @@ class ThinkSoundOperator(BaseOperator):
         cot_dir: Union[str, Path] = "cot_coarse",
         results_dir: Union[str, Path] = "results",
         scripts_dir: Union[str, Path] = ".",
-        synchformer_ckpt_path: Union[str, Path] = "ckpts/synchformer_state_dict.pth",
+        synchformer_ckpt_path: Union[str, Path] = "hugid/synchformer_state_dict.pth",
+        required_components: dict | None = None,
         operation_types: list = None
     ):
         """
@@ -51,6 +52,7 @@ class ThinkSoundOperator(BaseOperator):
         self.results_dir = Path(results_dir)
         self.scripts_dir = Path(scripts_dir)
         self.synchformer_ckpt_path = Path(synchformer_ckpt_path) if synchformer_ckpt_path else None
+        self.required_components = required_components or {}
 
         self.video_dir.mkdir(parents=True, exist_ok=True)
         self.cot_dir.mkdir(parents=True, exist_ok=True)
@@ -100,6 +102,16 @@ class ThinkSoundOperator(BaseOperator):
         cmd = ["python", "src/openworldlib/synthesis/audio_generation/thinksound/ThinkSound/extract_latents.py", "--duration_sec", str(int(duration_sec))]
         if self.synchformer_ckpt_path and self.synchformer_ckpt_path.exists():
             cmd.extend(["--synchformer_ckpt", str(self.synchformer_ckpt_path)])
+        # 通过 CLI 传递三类可选组件：clip / t5 / clip-processor
+        clip_backbone_id = self.required_components.get("clip_backbone_id")
+        if clip_backbone_id:
+            cmd.extend(["--clip_backbone_id", str(clip_backbone_id)])
+        t5_model_id = self.required_components.get("t5_model_id")
+        if t5_model_id:
+            cmd.extend(["--t5_model_id", str(t5_model_id)])
+        clip_processor_id = self.required_components.get("clip_processor_id")
+        if clip_processor_id:
+            cmd.extend(["--clip_processor_id", str(clip_processor_id)])
         if use_half:
             cmd.append("--use_half")
         subprocess.run(cmd, check=True)
