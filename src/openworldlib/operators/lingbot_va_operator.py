@@ -7,6 +7,7 @@ from typing import Any
 import numpy as np
 import torch
 import torch.nn.functional as F
+from PIL import Image as PILImage
 
 from .base_operator import BaseOperator
 
@@ -89,20 +90,17 @@ class LingBotVAOperator(BaseOperator):
 
     def process_perception(
         self,
-        images: dict[str, np.ndarray] | list[dict[str, np.ndarray]],
+        images: dict[str, PILImage.Image],
     ) -> list[torch.Tensor]:
         """Preprocess multi-view observation images: resize + normalize to [-1, 1].
 
         Args:
-            images: dict mapping camera key -> numpy HWC uint8 image,
-                    or a list of such dicts (for multiple timesteps).
+            images: dict mapping camera key -> PIL.Image for a single timestep.
 
         Returns:
-            List of [1, C, F, H, W] tensors, one per camera view.
+            List of [1, C, 1, H, W] tensors, one per camera view.
         """
         config = self.config
-        if not isinstance(images, list):
-            images = [images]
 
         videos = []
         for k_i, k in enumerate(config.obs_cam_keys):
@@ -115,10 +113,10 @@ class LingBotVAOperator(BaseOperator):
                 height_i, width_i = config.height, config.width
 
             frames = torch.from_numpy(
-                np.stack([each[k] for each in images])
-            ).float().permute(3, 0, 1, 2)  # C, F, H, W
+                np.array(images[k].convert('RGB'))
+            ).float().unsqueeze(0).permute(3, 0, 1, 2)  # C, 1, H, W
             frames = F.interpolate(frames, size=(height_i, width_i), mode='bilinear', align_corners=False)
-            frames = frames.unsqueeze(0)  # 1, C, F, H, W
+            frames = frames.unsqueeze(0)  # 1, C, 1, H, W
             frames = frames / 255.0 * 2.0 - 1.0
             videos.append(frames)
 
