@@ -462,9 +462,30 @@ class Pi3Pipeline:
 
         elif task_type == "render_view":
             if interactions is not None:
+                n_move = kwargs.get("frames_per_interaction", 30)
+                n_hold = kwargs.get("hold_frames", 10)
+                frames = []
+                if self._current_camera is None and self._cached_result is not None:
+                    self._current_camera = np.array(
+                        self._cached_result.camera_params[0]["camera_to_world"]
+                    )
                 for sig in interactions:
-                    self.stream(interaction_signal=sig)
-                return self.render_view(camera_to_world=self._current_camera)
+                    hold_img = self.render_view(camera_to_world=self._current_camera)
+                    for _ in range(n_hold):
+                        frames.append(hold_img)
+                    delta = self.operator.process_interaction_single(sig)
+                    sub_delta = [d / n_move for d in delta]
+                    for _ in range(n_move):
+                        self._current_camera = _apply_camera_delta(
+                            self._current_camera, sub_delta
+                        )
+                        frames.append(self.render_view(
+                            camera_to_world=self._current_camera
+                        ))
+                hold_img = self.render_view(camera_to_world=self._current_camera)
+                for _ in range(n_hold):
+                    frames.append(hold_img)
+                return frames
             return self.render_view(
                 view_index=view_index, camera_view=camera_view, **kwargs,
             )

@@ -233,6 +233,12 @@ class Pi3Operator(BaseOperator):
         self.current_interaction = []
         return delta
 
+    def process_interaction_single(self, interaction: str) -> List[float]:
+        """Return delta for a single interaction without modifying current_interaction state."""
+        self.check_interaction(interaction)
+        self.interaction_history.append(interaction)
+        return list(NAVIGATION_DELTAS.get(interaction, [0.0, 0.0, 0.0, 0.0, 0.0]))
+
     def delete_last_interaction(self):
         if len(self.current_interaction) > 0:
             self.current_interaction = self.current_interaction[:-1]
