@@ -20,7 +20,6 @@ class QwenMemory(BaseMemory):
         """
         super().__init__(capacity=capacity, **kwargs)
         self.storage = []
-        self.conversation_history = []
     
     def record(self, data: Dict[str, Any], **kwargs):
         """
@@ -41,26 +40,13 @@ class QwenMemory(BaseMemory):
         
         self.storage.append(turn_data)
         
-        # Update conversation history
-        if 'messages' in data:
-            self.conversation_history.extend(data['messages'])
-        if 'response' in data:
-            self.conversation_history.append({
-                'role': 'assistant',
-                'content': data['response']
-            })
-        
         # Apply capacity limit
         if self.capacity and len(self.storage) > self.capacity:
-            removed = self.storage.pop(0)
-            # Also remove from conversation_history
-            if 'messages' in removed['content']:
-                msg_count = len(removed['content']['messages'])
-                self.conversation_history = self.conversation_history[msg_count:]
+            self.storage.pop(0)
     
     def select(self, num_turns: int = -1, **kwargs) -> List[Dict]:
         """
-        Select recent conversation history
+        Select recent conversation messages from storage
         
         Args:
             num_turns: Number of recent turns to retrieve (-1 for all)
@@ -68,10 +54,34 @@ class QwenMemory(BaseMemory):
         Returns:
             List of message dictionaries
         """
-        if num_turns == -1 or num_turns >= len(self.conversation_history):
-            return self.conversation_history.copy()
+        if num_turns == -1 or num_turns >= len(self.storage):
+            # Return all messages from all stored turns
+            all_messages = []
+            for turn in self.storage:
+                if 'messages' in turn['content']:
+                    all_messages.extend(turn['content']['messages'])
+                if 'response' in turn['content']:
+                    all_messages.append({
+                        'role': 'assistant',
+                        'content': turn['content']['response']
+                    })
+            return all_messages
         
-        return self.conversation_history[-num_turns:] if num_turns > 0 else []
+        if num_turns <= 0:
+            return []
+        
+        # Return messages from last num_turns
+        recent_turns = self.storage[-num_turns:]
+        messages = []
+        for turn in recent_turns:
+            if 'messages' in turn['content']:
+                messages.extend(turn['content']['messages'])
+            if 'response' in turn['content']:
+                messages.append({
+                    'role': 'assistant',
+                    'content': turn['content']['response']
+                })
+        return messages
     
     def manage(self, action: str = "reset", **kwargs):
         """
@@ -84,13 +94,5 @@ class QwenMemory(BaseMemory):
         """
         if action == "reset":
             self.storage = []
-            self.conversation_history = []
         elif action == "clear_old" and len(self.storage) > 0:
-            removed = self.storage.pop(0)
-            if 'messages' in removed['content']:
-                msg_count = len(removed['content']['messages'])
-                self.conversation_history = self.conversation_history[msg_count:]
-    
-    def get_history(self) -> List[Dict]:
-        """Get full conversation history"""
-        return self.conversation_history.copy()
+            self.storage.pop(0)

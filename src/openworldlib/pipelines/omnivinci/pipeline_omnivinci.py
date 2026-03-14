@@ -7,6 +7,7 @@ to provide a unified interface for multimodal inference.
 
 import torch
 import os
+import numpy as np
 from typing import Optional, Any, Union, Dict, List
 from pathlib import Path
 from PIL import Image
@@ -143,9 +144,9 @@ class OmniVinciPipeline:
     def process(
         self,
         text: Optional[str] = None,
-        images: Optional[Union[str, Path, Image.Image, List]] = None,
-        audios: Optional[Union[str, Path, bytes, List]] = None,
-        videos: Optional[Union[str, Path, List]] = None,
+        images: Optional[Union[Image.Image, List[Image.Image]]] = None,
+        audios: Optional[Union[tuple, np.ndarray, List]] = None,
+        videos: Optional[List[Image.Image]] = None,
         messages: Optional[List[Dict]] = None,
         **kwargs
     ) -> Dict[str, Any]:
@@ -154,9 +155,9 @@ class OmniVinciPipeline:
         
         Args:
             text: Text prompt
-            images: Image inputs
-            audios: Audio inputs
-            videos: Video inputs
+            images: PIL Image or list of PIL Images
+            audios: Tuple of (numpy array, sample_rate), numpy array, or list of them
+            videos: List of PIL Images representing video frames
             messages: Pre-built messages
             **kwargs: Additional parameters
             
@@ -200,10 +201,10 @@ class OmniVinciPipeline:
     
     def __call__(
         self,
-        text: Optional[str] = None,
-        images: Optional[Union[str, Path, Image.Image, List]] = None,
-        audios: Optional[Union[str, Path, bytes, List]] = None,
-        videos: Optional[Union[str, Path, List]] = None,
+        prompt: Optional[str] = None,
+        images: Optional[Union[Image.Image, List[Image.Image]]] = None,
+        audios: Optional[Union[tuple, np.ndarray, List]] = None,
+        videos: Optional[List[Image.Image]] = None,
         messages: Optional[List[Dict]] = None,
         max_new_tokens: int = 1024,
         generation_kwargs: Optional[dict] = None,
@@ -214,10 +215,10 @@ class OmniVinciPipeline:
         Generate predictions
         
         Args:
-            text: Text prompt
-            images: Image inputs
-            audios: Audio inputs
-            videos: Video inputs
+            prompt: Text prompt
+            images: PIL Image or list of PIL Images
+            audios: Tuple of (numpy array, sample_rate), numpy array, or list of them
+            videos: List of PIL Images representing video frames
             messages: Pre-built messages (if provided, other inputs are ignored)
             max_new_tokens: Maximum number of tokens to generate
             generation_kwargs: Additional generation parameters
@@ -233,7 +234,7 @@ class OmniVinciPipeline:
         # Process inputs through operator if enabled
         if use_operator:
             processed_data = self.process(
-                text=text,
+                text=prompt,
                 images=images,
                 audios=audios,
                 videos=videos,
@@ -314,10 +315,10 @@ class OmniVinciPipeline:
     
     def stream(
         self,
-        text: Optional[str] = None,
-        images: Optional[Union[str, Path, Image.Image, List]] = None,
-        audios: Optional[Union[str, Path, bytes, List]] = None,
-        videos: Optional[Union[str, Path, List]] = None,
+        prompt: Optional[str] = None,
+        images: Optional[Union[Image.Image, List[Image.Image]]] = None,
+        audios: Optional[Union[tuple, np.ndarray, List]] = None,
+        videos: Optional[List[Image.Image]] = None,
         use_history: bool = True,
         max_new_tokens: int = 1024,
         generation_kwargs: Optional[dict] = None,
@@ -328,10 +329,10 @@ class OmniVinciPipeline:
         Stream-based generation with conversation memory
         
         Args:
-            text: Text prompt for current turn
-            images: Image inputs for current turn
-            audios: Audio inputs for current turn
-            videos: Video inputs for current turn
+            prompt: Text prompt for current turn
+            images: PIL Image or list of PIL Images for current turn
+            audios: Tuple of (numpy array, sample_rate), numpy array, or list of them
+            videos: List of PIL Images for current turn
             use_history: Whether to include conversation history
             max_new_tokens: Maximum number of tokens to generate
             generation_kwargs: Additional generation parameters
@@ -353,7 +354,7 @@ class OmniVinciPipeline:
         # Process inputs through operator
         # Text will be merged into messages if messages exist
         processed_data = self.process(
-            text=text,
+            text=prompt,
             images=images,
             audios=audios,
             videos=videos,

@@ -86,51 +86,56 @@ class Qwen2p5OmniOperator(BaseOperator):
         if self.check_interaction(interaction):
             self.current_interaction = interaction
     
-    def load_image(self, image_input: Union[str, Path, Image.Image]) -> Image.Image:
+    def load_image(self, image_input: Image.Image) -> Image.Image:
         """
         Load and preprocess image
         
         Args:
-            image_input: Image path or PIL Image
+            image_input: PIL Image
             
         Returns:
             PIL Image in RGB mode
         """
-        if isinstance(image_input, (str, Path)):
-            pil_img = Image.open(image_input)
-        else:
-            pil_img = image_input
+        pil_img = image_input
         
         if pil_img.mode != 'RGB':
             pil_img = pil_img.convert('RGB')
         
         return pil_img
     
-    def load_audio(self, audio_input: Union[str, Path, bytes]) -> Union[str, bytes]:
+    def load_audio(self, audio_input: Union[tuple, np.ndarray]) -> Union[tuple, np.ndarray]:
         """
-        Load audio file
+        Load audio data
         
         Args:
-            audio_input: Audio file path or bytes
+            audio_input: Tuple of (numpy array, sample_rate) or numpy array
             
         Returns:
-            Audio path or bytes
+            Audio data as tuple or numpy array
         """
-        if isinstance(audio_input, (str, Path)):
-            return str(audio_input)
-        return audio_input
+        # Accept preprocessed audio data (numpy array or tuple)
+        if isinstance(audio_input, tuple):
+            # Expecting (audio_data, sample_rate)
+            return audio_input
+        elif isinstance(audio_input, np.ndarray):
+            return audio_input
+        else:
+            raise TypeError(f"Audio input must be tuple (data, sample_rate) or numpy array, got {type(audio_input)}")
+
     
-    def load_video(self, video_input: Union[str, Path]) -> str:
+    def load_video(self, video_input: Image.Image) -> Image.Image:
         """
-        Load video file
+        Load video frame (PIL Image)
         
         Args:
-            video_input: Video file path
+            video_input: PIL Image representing a video frame
             
         Returns:
-            Video path as string
+            PIL Image
         """
-        return str(video_input)
+        if video_input.mode != 'RGB':
+            return video_input.convert('RGB')
+        return video_input
     
     def process_interaction(
         self,
@@ -223,9 +228,9 @@ class Qwen2p5OmniOperator(BaseOperator):
     
     def process_perception(
         self,
-        images: Optional[Union[str, Path, Image.Image, List]] = None,
-        audios: Optional[Union[str, Path, bytes, List]] = None,
-        videos: Optional[Union[str, Path, List]] = None,
+        images: Optional[Union[Image.Image, List[Image.Image]]] = None,
+        audios: Optional[Union[tuple, np.ndarray, List]] = None,
+        videos: Optional[List[Image.Image]] = None,
         include_system_prompt: bool = True,
         **kwargs
     ) -> Dict[str, Any]:
@@ -233,9 +238,9 @@ class Qwen2p5OmniOperator(BaseOperator):
         Process perception inputs (images, audios, videos)
         
         Args:
-            images: Single image or list of images
-            audios: Single audio or list of audios
-            videos: Single video or list of videos
+            images: PIL Image or list of PIL Images
+            audios: Tuple of (numpy array, sample_rate), numpy array, or list of them
+            videos: List of PIL Images representing video frames
             include_system_prompt: Whether to include system prompt
             **kwargs: Additional parameters
             
@@ -274,13 +279,12 @@ class Qwen2p5OmniOperator(BaseOperator):
                 processed_audio = self.load_audio(audio)
                 content.append({"type": "audio", "audio": processed_audio})
         
-        # Add videos
+        # Add videos (as a list of PIL Images - should be added as a single video item)
         if videos is not None:
-            if not isinstance(videos, list):
-                videos = [videos]
-            for video in videos:
-                processed_video = self.load_video(video)
-                content.append({"type": "video", "video": processed_video})
+            # Videos should be a list of PIL Images representing frames
+            # Convert to RGB and add as a single video item
+            processed_frames = [self.load_video(frame) for frame in videos]
+            content.append({"type": "video", "video": processed_frames})
         
         # Add user message
         if content:

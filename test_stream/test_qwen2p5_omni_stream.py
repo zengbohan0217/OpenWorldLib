@@ -1,4 +1,4 @@
-from openworldlib.pipelines.omnivinci.pipeline_omnivinci import OmniVinciPipeline
+from openworldlib.pipelines.qwen.pipeline_qwen2p5_omni import Qwen2p5OmniPipeline
 from PIL import Image
 from decord import VideoReader
 import numpy as np
@@ -6,12 +6,10 @@ import soundfile as sf
 import os
 
 # Model configuration
-model_path = "nvidia/omnivinci"  # Update with your model path
-pipeline = OmniVinciPipeline.from_pretrained(
+model_path = "Qwen/Qwen2.5-Omni-7B"
+pipeline = Qwen2p5OmniPipeline.from_pretrained(
     pretrained_model_path=model_path,
-    load_audio_in_video=True,
-    num_video_frames=128,
-    audio_length="max_3600",
+    use_audio_in_video=False,
 )
 
 # Supported input types
@@ -22,7 +20,7 @@ AVAILABLE_INPUTS = {
     "video": "Video file path"
 }
 
-print("=== OmniVinci Interactive Stream ===")
+print("=== Qwen2.5-Omni Interactive Stream ===")
 print("\nAvailable input types:")
 for input_type, description in AVAILABLE_INPUTS.items():
     print(f"  - {input_type}: {description}")
@@ -56,7 +54,7 @@ while True:
     prompt_input = input("Text prompt: ").strip()
     if not prompt_input:
         prompt_input = None
-
+    
     # Process image input
     image_path = input("Image path (or press Enter to skip): ").strip()
     if image_path and os.path.exists(image_path):
@@ -75,7 +73,7 @@ while True:
         if image_path:
             print(f"Image file not found: {image_path}")
         images = None
-
+    
     # Process audio input
     audio_path = input("Audio path (or press Enter to skip): ").strip()
     if audio_path and os.path.exists(audio_path):
@@ -89,7 +87,7 @@ while True:
         if audio_path:
             print(f"Audio file not found: {audio_path}")
         audios = None
-
+    
     # Process video input
     video_path = input("Video path (or press Enter to skip): ").strip()
     if video_path and os.path.exists(video_path):
@@ -97,14 +95,14 @@ while True:
             video_reader = VideoReader(video_path)
             total_frames_target = 33
             start_idx = 0
-
+            
             # Sample frames from the video
             target_times = np.arange(total_frames_target) / 30
             original_indices = np.round(target_times * 30).astype(int)
             batch_index = [idx + start_idx for idx in original_indices]
             if len(batch_index) < total_frames_target:
                 batch_index = batch_index[:total_frames_target]
-
+            
             videos = [Image.fromarray(video_reader[idx].asnumpy()) for idx in batch_index]
         except Exception as e:
             print(f"Error loading video: {e}")
@@ -119,20 +117,45 @@ while True:
         print("No input provided. Please provide at least one input.")
         continue
 
+    # Optional: return_audio
+    return_audio_str = input("Return audio? (y/n, default: n): ").strip().lower()
+    return_audio = return_audio_str == 'y'
+
     print(f"\nProcessing Turn {turn_idx}...")
 
     try:
         # Call stream method
-        result = pipeline.stream(
-            prompt=prompt_input,
-            images=images,
-            audios=audios,
-            videos=videos,
-            use_history=True,
-            reset_memory=False
-        )
-        
-        print(f"\nResponse: {result}")
+        if return_audio:
+            result, audio = pipeline.stream(
+                prompt=prompt_input,
+                images=images,
+                audios=audios,
+                videos=videos,
+                use_history=True,
+                return_audio=return_audio,
+                reset_memory=False
+            )
+            print(f"\nResponse: {result}")
+
+            # Save audio if generated
+            audio_output_path = f"output_turn_{turn_idx}.wav"
+            sf.write(
+                audio_output_path,
+                audio.reshape(-1).detach().cpu().numpy(),
+                samplerate=24000,
+            )
+            print(f"Audio saved to: {audio_output_path}")
+        else:
+            result = pipeline.stream(
+                prompt=prompt_input,
+                images=images,
+                audios=audios,
+                videos=videos,
+                use_history=True,
+                return_audio=return_audio,
+                reset_memory=False
+            )
+            print(f"\nResponse: {result}")
         
         turn_idx += 1
         print(f"\nTotal conversation turns: {len(pipeline.memory_module.storage)}")
@@ -146,4 +169,3 @@ while True:
 print(f"\n=== Stream Session Ended ===")
 print(f"Total turns: {turn_idx}")
 print(f"Memory storage length: {len(pipeline.memory_module.storage)}")
-

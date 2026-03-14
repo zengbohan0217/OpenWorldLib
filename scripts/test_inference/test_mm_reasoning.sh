@@ -6,6 +6,7 @@ show_help() {
     echo ""
     echo "Available methods:"
     echo "  - qwen2.5-omni        : Run test_qwen2p5_omni.py"
+    echo "  - omnivinci           : Run test_omnivinci.py"
     echo ""
 }
 
@@ -23,6 +24,10 @@ case $METHOD_NAME in
     "qwen2.5-omni")
         echo "Executing: qwen2.5-omni..."
         CUDA_VISIBLE_DEVICES=0 python test/test_qwen2p5_omni.py
+        ;;
+    "omnivinci")
+        echo "Executing: omnivinci..."
+        CUDA_VISIBLE_DEVICES=0 python test/test_omnivinci.py
         ;;
     *)
         # If the input does not match any method, show an error message

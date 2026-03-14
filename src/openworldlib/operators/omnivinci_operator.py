@@ -91,38 +91,51 @@ class OmniVinciOperator(BaseOperator):
         if self.check_interaction(interaction):
             self.current_interaction = interaction
     
-    def load_image(self, image_input: Union[str, Path, Image.Image]) -> Image.Image:
+    def load_image(self, image_input: Image.Image) -> Image.Image:
         """
         Load and preprocess image
-        """
-        
-        return str(image_input)
-    
-    def load_audio(self, audio_input: Union[str, Path, bytes]) -> Union[str, bytes]:
-        """
-        Load audio file
-        
+
         Args:
-            audio_input: Audio file path or bytes
-            
+            image_input: PIL Image
+
         Returns:
-            Audio path or bytes
+            PIL Image in RGB mode
         """
-        if isinstance(audio_input, (str, Path)):
-            return str(audio_input)
-        return audio_input
-    
-    def load_video(self, video_input: Union[str, Path]) -> str:
+        pil_img = image_input
+        if pil_img.mode != 'RGB':
+            pil_img = pil_img.convert('RGB')
+        return pil_img
+
+    def load_audio(self, audio_input: Union[tuple, np.ndarray]) -> Union[tuple, np.ndarray]:
         """
-        Load video file
-        
+        Load audio data
+
         Args:
-            video_input: Video file path
-            
+            audio_input: Tuple of (numpy array, sample_rate) or numpy array
+
         Returns:
-            Video path as string
+            Audio data as tuple or numpy array
         """
-        return str(video_input)
+        if isinstance(audio_input, tuple):
+            return audio_input
+        elif isinstance(audio_input, np.ndarray):
+            return audio_input
+        else:
+            raise TypeError(f"Audio input must be tuple (data, sample_rate) or numpy array, got {type(audio_input)}")
+
+    def load_video(self, video_input: Image.Image) -> Image.Image:
+        """
+        Load video frame (PIL Image)
+
+        Args:
+            video_input: PIL Image representing a video frame
+
+        Returns:
+            PIL Image in RGB mode
+        """
+        if video_input.mode != 'RGB':
+            return video_input.convert('RGB')
+        return video_input
     
     def process_interaction(
         self,
@@ -215,9 +228,9 @@ class OmniVinciOperator(BaseOperator):
     
     def process_perception(
         self,
-        images: Optional[Union[str, Path, Image.Image, List]] = None,
-        audios: Optional[Union[str, Path, bytes, List]] = None,
-        videos: Optional[Union[str, Path, List]] = None,
+        images: Optional[Union[Image.Image, List[Image.Image]]] = None,
+        audios: Optional[Union[tuple, np.ndarray, List]] = None,
+        videos: Optional[List[Image.Image]] = None,
         include_system_prompt: bool = True,
         **kwargs
     ) -> Dict[str, Any]:
@@ -225,9 +238,9 @@ class OmniVinciOperator(BaseOperator):
         Process perception inputs (images, audios, videos)
         
         Args:
-            images: Single image or list of images
-            audios: Single audio or list of audios
-            videos: Single video or list of videos
+            images: PIL Image or list of PIL Images
+            audios: Tuple of (numpy array, sample_rate), numpy array, or list of them
+            videos: List of PIL Images representing video frames
             include_system_prompt: Whether to include system prompt
             **kwargs: Additional parameters
             
@@ -253,12 +266,10 @@ class OmniVinciOperator(BaseOperator):
         content = []
         
         # Add videos first (as per OmniVinci's expected order)
+        # Videos should be a list of PIL Images representing frames, added as a single video item
         if videos is not None:
-            if not isinstance(videos, list):
-                videos = [videos]
-            for video in videos:
-                processed_video = self.load_video(video)
-                content.append({"type": "video", "video": processed_video})
+            processed_frames = [self.load_video(frame) for frame in videos]
+            content.append({"type": "video", "video": processed_frames})
         
         # Add images
         if images is not None:
@@ -266,7 +277,7 @@ class OmniVinciOperator(BaseOperator):
                 images = [images]
             for img in images:
                 processed_img = self.load_image(img)
-                content.append({"type": "image", "image": processed_img})
+                content.append({"type": "image", "image_pil": processed_img})
         
         # Add audios
         if audios is not None:
