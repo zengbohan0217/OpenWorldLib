@@ -1,31 +1,11 @@
 import torch
 import os
-from dataclasses import dataclass
 from typing import Optional, Any, Union, Dict, List
 from pathlib import Path
 from loguru import logger
 
 from ...operators.mmaudio_operator import MMAudioOperator
 from ...synthesis.audio_generation.mmaudio.mmaudio_synthesis import MMAudioSynthesis
-
-
-@dataclass
-class MMAudioArgs:
-    variant: str = 'large_44k_v2'
-    video: Optional[Union[str, Path]] = None
-    prompt: Optional[str] = None
-    negative_prompt: Optional[str] = None
-    duration: float = 8.0
-    cfg_strength: float = 4.5
-    num_steps: int = 25
-    seed: int = 42
-    mask_away_clip: bool = False
-    output: Optional[str] = None
-    skip_video_composite: bool = False
-    full_precision: bool = False
-
-# 默认全局参数实例
-args = MMAudioArgs()
 
 class MMAudioPipeline:  
     """
@@ -36,20 +16,21 @@ class MMAudioPipeline:
         self, 
         operator: Optional[MMAudioOperator] = None, 
         synthesis_model: Optional[MMAudioSynthesis] = None, 
-        synthesis_args=None, 
         device: str = 'cuda'
     ):
 
         self.operator = operator
         self.synthesis_model = synthesis_model
-        self.synthesis_args = synthesis_args
         self.device = device
         
     @classmethod
     def from_pretrained(
         cls, 
-        pretrained_model_path: str,
-        synthesis_args=None, 
+        model_path: str,
+        required_components: Dict[str, str],
+        variant: str = "large_44k_v2",
+        full_precision: bool = False,
+        num_steps: int = 25,
         device: str = None, 
         logger_obj=None,
         **kwargs,
@@ -58,8 +39,10 @@ class MMAudioPipeline:
         从预训练模型加载完整的 pipeline
 
         Args:
-            pretrained_model_path: 预训练模型路径，可以是本地路径或者hugid路径
-            synthesis_args: synthesis 模型参数，如果为 None 则使用默认 Args
+            model_path: 预训练模型路径，可以是本地路径或者hugid路径
+            variant: 模型变体名称
+            full_precision: 是否使用全精度（float32）
+            num_steps: FlowMatching 推理步数
             device: 设备，如果为 None 则自动检测
             logger_obj: 日志记录器
             **kwargs: 额外参数
@@ -67,19 +50,18 @@ class MMAudioPipeline:
         Returns:
             MMAudioPipeline: 初始化的 pipeline 实例
         """
-        # 使用默认 args 如果未提供
-        if synthesis_args is None:
-            synthesis_args = args
-        
         if logger_obj:
             logger_obj.info("Loading MMAudio synthesis model...")
         
         synthesis_model = MMAudioSynthesis.from_pretrained(
-            pretrained_model_path=pretrained_model_path,
-            args=synthesis_args,
+            model_path=model_path,
+            required_components=required_components,
+            variant=variant,
+            full_precision=full_precision,
+            num_steps=num_steps,
             device=device,
             logger_obj=logger_obj,
-            **kwargs
+            **kwargs,
         )
         
         if logger_obj:
@@ -90,7 +72,6 @@ class MMAudioPipeline:
         pipeline = cls(
             operator=operator,
             synthesis_model=synthesis_model,
-            synthesis_args=synthesis_args,
             device=synthesis_model.device 
         )
 
@@ -221,20 +202,6 @@ class MMAudioPipeline:
             }   
             torch.save(operator_config, save_directory / "operator_config.pt")
         
-        # 保存 synthesis args 配置
-        if self.synthesis_args:
-            synthesis_config = {
-                'variant': self.synthesis_args.variant,
-                'full_precision': self.synthesis_args.full_precision,
-                'num_steps': self.synthesis_args.num_steps,
-                'duration': self.synthesis_args.duration,
-                'cfg_strength': self.synthesis_args.cfg_strength,
-                'seed': self.synthesis_args.seed,
-                'mask_away_clip': self.synthesis_args.mask_away_clip,
-                'skip_video_composite': self.synthesis_args.skip_video_composite,
-            }
-            torch.save(synthesis_config, save_directory / "synthesis_config.pt")
-        
         # 保存 pipeline 配置
         pipeline_config = {
             'device': self.device,
@@ -242,19 +209,6 @@ class MMAudioPipeline:
         torch.save(pipeline_config, save_directory / "pipeline_config.pt")
         
         logger.info(f"MMAudio Pipeline saved to {save_directory}")
-    
-    def update_synthesis_args(self, **kwargs):
-        """
-        更新 synthesis 参数配置
-        
-        Args:
-            **kwargs: 要更新的参数，如 variant, duration, cfg_strength 等
-        """
-        if self.synthesis_args:
-            for key, value in kwargs.items():
-                if hasattr(self.synthesis_args, key):
-                    setattr(self.synthesis_args, key, value)
-                    logger.info(f"Updated synthesis_args.{key} to {value}")
     
     def get_operator(self) -> Optional[MMAudioOperator]:
         """获取 operator 实例"""

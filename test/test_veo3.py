@@ -1,23 +1,22 @@
-import json
-import os
 import sys
-from typing import Dict
 sys.path.append("..") 
 
 import requests
+from PIL import Image
 
 from openworldlib.pipelines.veo.pipeline_veo3 import Veo3Pipeline
 
 
-image_path = "./data/test_case1/ref_image.png"
+image_path = ".data/test_case/test_image_case1/ref_image.png"
+image = Image.open(image_path).convert('RGB')
 input_prompt = "An old-fashioned European village with thatched roofs on the houses."
 
 veo3_pipeline = Veo3Pipeline.api_init(
     endpoint='https://api.newcoin.top/v1',
-    api_key='sk-xtIk2ZVUneGeXmr7DkvxGDKnfiwIIJvS1xKvQ8X9nFBfbNxh')
+    api_key='your api key')
 
 result = veo3_pipeline(
-    image=image_path,
+    images=image,
     prompt=input_prompt
 )
 

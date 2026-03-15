@@ -137,6 +137,10 @@ def main(args):
         vae_config=None,
         enable_conditions=True,
         synchformer_ckpt=args.synchformer_ckpt,
+        # 允许通过 CLI 自定义这三个模型 ID/路径；若未提供，则在 FeaturesUtils 内部使用默认值
+        clip_backbone_id=getattr(args, "clip_backbone_id", "facebook/metaclip-h14-fullcc2.5b"),
+        t5_model_id=getattr(args, "t5_model_id", "google/t5-v1_1-xl"),
+        clip_processor_id=getattr(args, "clip_processor_id", "openai/clip-vit-large-patch14"),
         use_half=args.use_half
     )
 
@@ -205,6 +209,10 @@ if __name__ == '__main__':
     parser.add_argument('--sample_rate', type=int, default=44100)
     parser.add_argument('--duration_sec', type=float, default=9.0)
     parser.add_argument('--synchformer_ckpt', default='ckpts/synchformer_state_dict.pth')
+    # 允许从外部（如 pipeline_thinksound 的 required_components）传入自定义模型 ID/本地路径
+    parser.add_argument('--clip_backbone_id', default='facebook/metaclip-h14-fullcc2.5b')
+    parser.add_argument('--t5_model_id', default='google/t5-v1_1-xl')
+    parser.add_argument('--clip_processor_id', default='openai/clip-vit-large-patch14')
     parser.add_argument('--start-row', type=int, default=0)
     parser.add_argument('--end-row', type=int, default=None)
     parser.add_argument('--use_half', action='store_true', help='Use half precision for models to save memory')

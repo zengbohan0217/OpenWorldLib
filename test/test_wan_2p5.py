@@ -1,6 +1,7 @@
 import sys 
 sys.path.append("..") 
 from openworldlib.pipelines.wan.pipeline_wan_2p5 import Wan2p5Pipeline
+from PIL import Image
 import os
 import requests
 
@@ -15,7 +16,8 @@ def save_video(url: str, save_path: str, chunk_size: int = 1024 * 1024) -> None:
                 file.write(chunk)
 
 
-image_path = "./data/test_case1/ref_image.png"
+image_path = ".data/test_case/test_image_case1/ref_image.png"
+image = Image.open(image_path).convert('RGB')
 test_prompt = "An old-fashioned European village with thatched roofs on the houses."
 output_dir = "./output/wan25"
 
@@ -26,7 +28,7 @@ wan25_pipeline = Wan2p5Pipeline.api_init(
 
 result = wan25_pipeline(
     prompt=test_prompt,
-    reference_image=image_path,  # 提供图像则自动使用 i2av
+    images=image,  # 提供图像则自动使用 i2av
 )
 
 # 从结果中获取 video_url 并下载

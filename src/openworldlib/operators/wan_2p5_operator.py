@@ -1,45 +1,9 @@
 from PIL import Image
-from typing import Union, Optional, Dict, Any
-from pathlib import Path
-import mimetypes
+from typing import Optional, Dict, Any
 import base64
 import io
 
 from .base_operator import BaseOperator
-
-
-def encode_file(image_input: Union[str, Path, Image.Image]) -> str:
-    '''
-    将图片编码为base64 格式
-    
-    Args:
-        image_input: 图像路径或 PIL Image 对象
-        
-    Returns:
-        base64编码的图像字符串
-    '''
-    if isinstance(image_input, Image.Image):
-        if image_input.mode != 'RGB':
-            image_input = image_input.convert('RGB')
-        
-        buffer = io.BytesIO()
-        image_input.save(buffer, format='PNG')
-        image_bytes = buffer.getvalue()
-        mime_type = 'image/png'
-    elif isinstance(image_input, (str, Path)):
-        img_path = Path(image_input)
-        mime_type, _ = mimetypes.guess_type(img_path)
-        if not mime_type or not mime_type.startswith("image/"):
-            raise ValueError("不支持或无法识别的图像格式")
-        if not img_path.exists():
-            raise FileNotFoundError(f"Image file not found: {img_path}")
-        with open(img_path, "rb") as image_file:
-            image_bytes = image_file.read()
-    else:
-        raise TypeError("image_input 必须是文件路径(Path/str)或 PIL Image")
-    
-    encoded_string = base64.b64encode(image_bytes).decode('utf-8')
-    return f"data:{mime_type};base64,{encoded_string}"
 
 
 class Wan2p5Operator(BaseOperator):
@@ -68,11 +32,27 @@ class Wan2p5Operator(BaseOperator):
         self.interaction_template = ["text_prompt", "image_prompt", "multimodal_prompt"]
         self.interaction_template_init()
     
-    def process_image(self, image_input: Union[str, Path, Image.Image]) -> str:
+    def process_image(self, image_input: Image.Image) -> str:
         """
         编码图像为base64格式
+        Args:
+            image_input: PIL.Image 对象
+        Returns:
+            base64编码的图像字符串
         """
-        return encode_file(image_input)
+        if not isinstance(image_input, Image.Image):
+            raise TypeError(f"image_input must be PIL.Image, got {type(image_input)}")
+        
+        if image_input.mode != 'RGB':
+            image_input = image_input.convert('RGB')
+        
+        buffer = io.BytesIO()
+        image_input.save(buffer, format='PNG')
+        image_bytes = buffer.getvalue()
+        mime_type = 'image/png'
+        
+        encoded_string = base64.b64encode(image_bytes).decode('utf-8')
+        return f"data:{mime_type};base64,{encoded_string}"
     
     def get_interaction(self, interaction):
         if self.check_interaction(interaction):
@@ -94,36 +74,31 @@ class Wan2p5Operator(BaseOperator):
     
     def process_perception(
         self,
-        reference_image: Optional[Union[str, Image.Image, Path]] = None,
+        images: Optional[Image.Image] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
         处理交互输入，生成模型所需的输入格式
         
         Args:
-            prompt: 文本提示词
-            reference_image: 参考图像（可选）
+            images: 参考图像（PIL.Image，可选）
             **kwargs: 其他参数
             
         Returns:
             Dict 包含处理后的输入数据：
-                - prompt: 文本提示词
                 - encoded_image: 编码后的图像（如果有）
-                - reference_image: 原始参考图像（如果有）
+                - images: 原始参考图像（如果有）
         """
         result: Dict[str, Any] = {
             "encoded_image": None,
-            "reference_image": None
+            "images": None
         }
         
-        # 简单判断路径是否存在
-        if reference_image is not None:
-            if isinstance(reference_image, (str, Path)):
-                img_path = Path(reference_image)
-                if not img_path.exists():
-                    raise FileNotFoundError(f"Image file not found: {reference_image}")
-            result["encoded_image"] = self.process_image(reference_image)
-            result["reference_image"] = reference_image
+        if images is not None:
+            if not isinstance(images, Image.Image):
+                raise TypeError(f"images must be PIL.Image, got {type(images)}")
+            result["encoded_image"] = self.process_image(images)
+            result["images"] = images
         
         return result
 

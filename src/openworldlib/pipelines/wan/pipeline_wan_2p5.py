@@ -1,11 +1,10 @@
 # 这里面包含了sora2， veo3 和wan2.5，主要包含api调用
 from PIL import Image
-from typing import Optional, Union, Dict, Any
-from pathlib import Path
+from typing import Optional, Dict, Any
 from http import HTTPStatus
 
 from ...operators.wan_2p5_operator import Wan2p5Operator
-from ...synthesis.visual_generation.wan.wan_2p5.wan_2p5_synthesis import Wan2p5Synthesis
+from ...synthesis.visual_generation.wan.wan_2p5_synthesis import Wan2p5Synthesis
 
 
 class Wan2p5Pipeline:
@@ -89,7 +88,7 @@ class Wan2p5Pipeline:
     def process(
         self,
         prompt: str,
-        reference_image: Optional[Union[str, Image.Image]] = None,
+        images: Optional[Image.Image] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -97,7 +96,7 @@ class Wan2p5Pipeline:
         
         Args:
             prompt: 文本提示词
-            reference_image: 参考图像（可选）
+            images: 参考图像（可选）
             **kwargs: 其他参数
             
         Returns:
@@ -113,18 +112,18 @@ class Wan2p5Pipeline:
         processed_data['prompt'] = processed_interaction['processed_prompt']
         
         processed_perception = self.operator.process_perception(
-            reference_image=reference_image,
+            images=images,
             **kwargs
         )
         processed_data['encoded_image'] = processed_perception['encoded_image']
-        processed_data['reference_image'] = processed_perception['reference_image']
+        processed_data['images'] = processed_perception['images']
         
         return processed_data
     
     def __call__(
         self,
         prompt: str,
-        reference_image: Optional[Union[str, Image.Image]] = None,
+        images: Optional[Image.Image] = None,
         task_type: str = "auto",  # "auto", "t2av", "i2av"
         size: str = '832*480',
         resolution: str = '480P',
@@ -143,7 +142,7 @@ class Wan2p5Pipeline:
         
         Args:
             prompt: 文本提示词
-            reference_image: 参考图像（可选），如果提供则使用 i2av，否则使用 t2av
+            images: 参考图像（可选），如果提供则使用 i2av，否则使用 t2av
             task_type: 任务类型，"auto" 自动判断，"t2av" 文本到视频，"i2av" 图像到视频
             size: t2av 任务的视频尺寸
             resolution: i2av 任务的分辨率
@@ -172,7 +171,7 @@ class Wan2p5Pipeline:
         # 使用 operator 预处理输入
         processed_data = self.process(
             prompt=prompt,
-            reference_image=reference_image,
+            images=images,
             **kwargs
         )
         

@@ -2,6 +2,7 @@ import sys
 sys.path.append("..") 
 import os
 import imageio
+from PIL import Image
 from openworldlib.pipelines.sora.pipeline_sora2 import Sora2Pipeline
 import os
 import time
@@ -16,7 +17,8 @@ def save_video(client, video, task_type, output_dir="./output/sora2", filename_p
 
 
 # 配置参数
-image_path = "./data/test_case1/ref_image.png"
+image_path = ".data/test_case/test_image_case1/ref_image.png"
+image = Image.open(image_path).convert('RGB')
 test_prompt = "An old-fashioned European village with thatched roofs on the houses."
 output_dir = "./output/sora2"
 
@@ -28,7 +30,7 @@ pipeline = Sora2Pipeline.api_init(
 # 自动判断任务类型，pipeline 内部轮询等待完成
 result = pipeline(
     prompt=test_prompt,
-    # reference_image=image_path,
+    images=image,  # 提供图像则自动使用 i2v
     wait=True  # 轮询在 pipeline 内完成
 )
 

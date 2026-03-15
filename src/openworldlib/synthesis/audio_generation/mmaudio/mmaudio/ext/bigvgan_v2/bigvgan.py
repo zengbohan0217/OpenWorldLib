@@ -363,17 +363,18 @@ class BigVGAN(
         *,
         model_id: str,
         revision: str,
-        cache_dir: str,
-        force_download: bool,
-        proxies: Optional[Dict],
-        resume_download: bool,
-        local_files_only: bool,
-        token: Union[str, bool, None],
-        map_location: str = "cpu",  # Additional argument
-        strict: bool = False,  # Additional argument
+        cache_dir: str | None = None,
+        force_download: bool = False,
+        proxies: Optional[Dict] = None,
+        resume_download: bool = False,
+        local_files_only: bool = False,
+        token: Union[str, bool, None] = None,
+        map_location: str = "cpu",
+        strict: bool = False,
         use_cuda_kernel: bool = False,
         **model_kwargs,
     ):
+        ...
         """Load Pytorch pretrained weights and return the loaded model."""
 
         # Download and load hyperparameters (h) used by BigVGAN

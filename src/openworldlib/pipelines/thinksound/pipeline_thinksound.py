@@ -2,29 +2,10 @@ import os
 import torch
 from pathlib import Path
 from typing import Optional, Union, Dict, Any
-from dataclasses import dataclass
 from loguru import logger
 
 from ...operators.thinksound_operator import ThinkSoundOperator
 from ...synthesis.audio_generation.thinksound.thinksound_synthesis import ThinkSoundSynthesis
-
-
-@dataclass
-class ThinkSoundArgs:
-    """ThinkSound 配置参数"""
-    model_config: str = "src/openworldlib/synthesis/audio_generation/thinksound/ThinkSound/ThinkSound/configs/model_configs/thinksound.json"
-    # 主模型权重（对应 infer.sh 里的 ckpts/thinksound.ckpt）
-    ckpt_dir: str = "ckpts/thinksound.ckpt"
-    # VAE 权重（对应 infer.sh / defaults.ini 里的 ckpts/vae.ckpt）
-    pretransform_ckpt_path: str = "ckpts/vae.ckpt"
-    synchformer_ckpt_path: str = "ckpts/synchformer_state_dict.pth"
-    duration_sec: float = 8.0  # 用于初始化模型配置，可按需调整
-    seed: int = 42
-    compile: bool = False
-    video_dir: str = "videos"
-    cot_dir: str = "cot_coarse"
-    results_dir: str = "results"
-    scripts_dir: str = "."
 
 
 class ThinkSoundPipeline:
@@ -38,7 +19,6 @@ class ThinkSoundPipeline:
         self, 
         operator: Optional[ThinkSoundOperator] = None,
         synthesis_model: Optional[ThinkSoundSynthesis] = None, 
-        synthesis_args: Optional[ThinkSoundArgs] = None, 
         device: str = 'cuda'
     ):
         """
@@ -47,19 +27,26 @@ class ThinkSoundPipeline:
         Args:
             operator: ThinkSoundOperator 实例
             synthesis_model: ThinkSoundSynthesis 实例
-            synthesis_args: 配置参数
             device: 设备
         """
         self.operator = operator
         self.synthesis_model = synthesis_model
-        self.synthesis_args = synthesis_args or ThinkSoundArgs()
         self.device = device
     
     @classmethod
     def from_pretrained(
         cls, 
-        synthesis_model_path: str,
-        synthesis_args: Optional[ThinkSoundArgs] = None, 
+        model_path: str,
+        required_components: Optional[Dict[str, str]] = None,
+        model_config: str = "src/openworldlib/synthesis/audio_generation/thinksound/ThinkSound/ThinkSound/configs/model_configs/thinksound.json",
+        duration_sec: float = 8.0,
+        seed: int = 42,
+        compile: bool = False,
+        video_dir: str = "videos",
+        cot_dir: str = "cot_coarse",
+        results_dir: str = "results",
+        scripts_dir: str = ".",
+        synchformer_ckpt_path: str = "hugid/synchformer_state_dict.pth",
         device: str = None, 
         logger_obj=None,
         **kwargs
@@ -68,16 +55,38 @@ class ThinkSoundPipeline:
         从预训练模型加载完整的 pipeline
         
         Args:
-            synthesis_args: synthesis 模型参数，包含所有必要的路径（model_config, ckpt_dir 等）
+            model_path: 模型根目录或 HuggingFace repo_id
+            required_components: 额外依赖组件字典，目前支持：
+                - "clip_backbone_id": MetaCLIP 模型 ID 或本地路径
+                - "t5_model_id": T5 模型 ID 或本地路径
+                - "clip_processor_id": CLIP Processor 模型 ID 或本地路径
+            model_config: 模型配置 json 路径
+            duration_sec: 音频时长（秒）
+            seed: 随机种子
+            compile: 是否对模型进行 torch.compile
+            video_dir: 视频目录
+            cot_dir: COT 目录
+            results_dir: 结果目录
+            scripts_dir: 脚本目录
+            synchformer_ckpt_path: Synchformer 模型路径
             device: 设备
             logger_obj: 日志记录器
             
         Returns:
             ThinkSoundPipeline 实例
         """
-        if synthesis_args is None:
-            synthesis_args = ThinkSoundArgs()
-        
+        if required_components is None:
+            required_components = {
+                "clip_backbone_id": "facebook/metaclip-h14-fullcc2.5b",
+                "t5_model_id": "google/t5-v1_1-xl",
+                "clip_processor_id": "openai/clip-vit-large-patch14",
+            }
+        else:
+            required_components = dict(required_components)
+            required_components.setdefault("clip_backbone_id", "facebook/metaclip-h14-fullcc2.5b")
+            required_components.setdefault("t5_model_id", "google/t5-v1_1-xl")
+            required_components.setdefault("clip_processor_id", "openai/clip-vit-large-patch14")
+
         if logger_obj:
             logger_obj.info("Loading ThinkSound pipeline...")
         
@@ -85,25 +94,28 @@ class ThinkSoundPipeline:
             logger_obj.info("Loading ThinkSound synthesis model...")
         
         synthesis_model = ThinkSoundSynthesis.from_pretrained(
-            synthesis_model_path=synthesis_model_path,
-            args=synthesis_args,
+            model_path=model_path,
+            model_config=model_config,
+            duration_sec=duration_sec,
+            seed=seed,
+            compile=compile,
             device=device,
             logger_obj=logger_obj,
             **kwargs
         )
         
         operator = ThinkSoundOperator(
-            video_dir=synthesis_args.video_dir,
-            cot_dir=synthesis_args.cot_dir,
-            results_dir=synthesis_args.results_dir,
-            scripts_dir=synthesis_args.scripts_dir,
-            synchformer_ckpt_path=synthesis_args.synchformer_ckpt_path,
+            video_dir=video_dir,
+            cot_dir=cot_dir,
+            results_dir=results_dir,
+            scripts_dir=scripts_dir,
+            synchformer_ckpt_path=synchformer_ckpt_path,
+            required_components=required_components,
         )
         
         pipeline = cls(
             operator=operator,
             synthesis_model=synthesis_model,
-            synthesis_args=synthesis_args,
             device=synthesis_model.device
         )
         
@@ -182,15 +194,15 @@ class ThinkSoundPipeline:
         save_directory.mkdir(parents=True, exist_ok=True)
         
         # 保存配置
-        if self.synthesis_args:
+        if self.synthesis_model:
             import json
             config = {
-                'model_config': self.synthesis_args.model_config,
-                'ckpt_dir': self.synthesis_args.ckpt_dir,
-                'pretransform_ckpt_path': self.synthesis_args.pretransform_ckpt_path,
-                'duration_sec': self.synthesis_args.duration_sec,
-                'seed': self.synthesis_args.seed,
-                'compile': self.synthesis_args.compile,
+                'model_config': getattr(self.synthesis_model, "model_config_path", None),
+                'ckpt_dir': getattr(self.synthesis_model, "ckpt_path", None),
+                'pretransform_ckpt_path': getattr(self.synthesis_model, "pretransform_ckpt_path", None),
+                'duration_sec': getattr(self.synthesis_model, "duration_sec", None),
+                'seed': getattr(self.synthesis_model, "seed", None),
+                'compile': getattr(self.synthesis_model, "compile_model", None),
             }
             with open(save_directory / "thinksound_config.json", 'w') as f:
                 json.dump(config, f, indent=2)

@@ -1,5 +1,5 @@
 import sys
-from openworldlib.pipelines.thinksound.pipeline_thinksound import ThinkSoundPipeline, ThinkSoundArgs
+from openworldlib.pipelines.thinksound.pipeline_thinksound import ThinkSoundPipeline
 import torchaudio
 from pathlib import Path
 from loguru import logger
@@ -16,12 +16,23 @@ def save_audio_result(result):
 
 
 # thinksound不允许为none，duration-sec必须是匹配的
-video_path = "./data/test_video_case1/talking_man.mp4"
+video_path = "./data/test_case/test_video_case1/talking_man.mp4"
 title = "play guitar"
 description = "A man is playing guitar gently"
-pretrained_model_path = "FunAudioLLM/ThinkSound"
+model_path = "FunAudioLLM/ThinkSound"
 
-args = ThinkSoundArgs(
+requirement_components = {
+    # 下面三项可改成本地路径或保持为 HF 模型 ID
+    "clip_backbone_id": "facebook/metaclip-h14-fullcc2.5b",  # or "your path to huggingface cache"
+    "t5_model_id": "google/t5-v1_1-xl",             # or "your path to huggingface cache"
+    "clip_processor_id": "openai/clip-vit-large-patch14",     # or "your path to huggingface cache"
+}
+
+pipeline = ThinkSoundPipeline.from_pretrained(
+    model_path=model_path,
+    required_components=requirement_components,
+    synchformer_ckpt_path="hugid/synchformer_state_dict.pth",
+    model_config="src/openworldlib/synthesis/audio_generation/thinksound/ThinkSound/ThinkSound/configs/model_configs/thinksound.json",
     duration_sec=3.0,
     seed=42,
     compile=False,
@@ -29,12 +40,6 @@ args = ThinkSoundArgs(
     cot_dir="cot_coarse",
     results_dir="results",
     scripts_dir=".",
-)
-
-
-pipeline = ThinkSoundPipeline.from_pretrained(
-    synthesis_model_path=pretrained_model_path,
-    synthesis_args=args,
     device=None,  # 自动检测设备
 )
 

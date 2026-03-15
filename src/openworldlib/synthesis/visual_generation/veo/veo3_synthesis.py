@@ -149,17 +149,17 @@ class Veo3Synthesis(object):
                 - task_type: 任务类型
                 - result: 生成结果
         """
-        image = processed_data.get("image", None)
+        images = processed_data.get("images", None)
         
         if task_type == "auto":
-            if image is not None:
+            if images is not None:
                 task_type = "i2av"
             else:
                 task_type = "t2av"
         
         if task_type == "i2av":
-            if image is None:
-                raise ValueError("i2av 任务需要提供 image 参数")
+            if images is None:
+                raise ValueError("i2av 任务需要提供 images 参数")
             result = self.generate_i2av(
                 processed_data=processed_data,
                 **kwargs

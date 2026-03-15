@@ -2,10 +2,10 @@ import sys
 import time
 from multiprocessing import process
 from PIL import Image
-from typing import Optional, Union, Dict, Any
+from typing import Optional, Dict, Any
 
 from ...operators.sora2_operator import Sora2Operator
-from ...synthesis.visual_generation.sora.sora2.sora2_synthesis import Sora2Synthesis
+from ...synthesis.visual_generation.sora.sora2_synthesis import Sora2Synthesis
 
 
 
@@ -78,7 +78,7 @@ class Sora2Pipeline:
     def process(
         self,
         prompt: str,
-        reference_image: Optional[Union[str, Image.Image]] = None,
+        images: Optional[Image.Image] = None,
         **kwargs
     ) -> Dict[str, Any]:
         """
@@ -95,18 +95,18 @@ class Sora2Pipeline:
 
         # 视图片为感知输入通过process_perception处理
         processed_perception = self.operator.process_perception(
-            reference_image=reference_image,
+            images=images,
             **kwargs
         )
         processed_data['encoded_image'] = processed_perception['encoded_image']
-        processed_data['reference_image'] = processed_perception['reference_image']
+        processed_data['images'] = processed_perception['images']
         
         return processed_data
 
     def __call__(
         self,
         prompt: str,
-        reference_image: Optional[Union[str, Image.Image]] = None,
+        images: Optional[Image.Image] = None,
         size: str = "1280x720",
         duration: int = 4,
         task_type: str = "auto",
@@ -116,7 +116,7 @@ class Sora2Pipeline:
         **kwargs
     ) -> Dict[str, Any]:
         """
-        自动根据是否提供 reference_image 选择 T2V 或 I2V
+        自动根据是否提供 images 选择 T2V 或 I2V
         """
 
         if self.synthesis_model is None:
@@ -128,7 +128,7 @@ class Sora2Pipeline:
         # 使用 operator 预处理输入
         processed_data = self.process(
             prompt=prompt,
-            reference_image=reference_image,
+            images=images,
             **kwargs
         )
         

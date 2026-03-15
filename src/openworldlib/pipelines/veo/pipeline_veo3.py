@@ -1,12 +1,12 @@
 from __future__ import annotations
 
 from multiprocessing import process
-from typing import Optional, Union, Dict, Any, List
+from typing import Optional, Dict, Any, List
 
 from PIL import Image
 
 from ...operators.veo3_operator import Veo3Operator
-from ...synthesis.visual_generation.veo.veo3.veo3_synthesis import Veo3Synthesis
+from ...synthesis.visual_generation.veo.veo3_synthesis import Veo3Synthesis
 
 
 class Veo3Pipeline:
@@ -88,14 +88,14 @@ class Veo3Pipeline:
     def process(
         self,
         prompt: str,
-        image: Optional[Union[str, Image.Image]] = None,
+        images: Optional[Image.Image] = None,
         aspect_ratio: str = "16:9",
         resolution: str = "720p",
         duration_seconds: int = 8,
         negative_prompt: Optional[str] = None,
         seed: Optional[int] = None,
-        last_frame: Optional[Union[str, Image.Image]] = None,
-        reference_images: Optional[List[Union[str, Image.Image]]] = None,
+        last_frame: Optional[Image.Image] = None,
+        reference_images: Optional[List[Image.Image]] = None,
         person_generation: Optional[str] = None,
         enhance_prompt: Optional[bool] = None,
         generate_audio: Optional[bool] = None,
@@ -107,7 +107,7 @@ class Veo3Pipeline:
         
         Args:
             prompt: 文本提示词
-            image: 主图像（可选）
+            images: 主图像（可选）
             aspect_ratio: 宽高比
             resolution: 分辨率
             duration_seconds: 视频时长（秒）
@@ -132,7 +132,7 @@ class Veo3Pipeline:
         
         processed_perception = self.operator.process_perception(
             prompt=prompt,
-            image=image,
+            images=images,
             aspect_ratio=aspect_ratio,
             resolution=resolution,
             duration_seconds=duration_seconds,
@@ -148,7 +148,7 @@ class Veo3Pipeline:
         )
 
         processed_data['user_content'] = processed_perception['user_content']
-        processed_data['image'] = processed_perception['image']
+        processed_data['images'] = processed_perception['images']
         processed_data['reference_images'] = processed_perception['reference_images']
 
         return processed_data
@@ -156,15 +156,15 @@ class Veo3Pipeline:
     def __call__(
         self,
         prompt: str,
-        image: Optional[Union[str, Image.Image]] = None,
+        images: Optional[Image.Image] = None,
         task_type: str = "auto",
         aspect_ratio: str = "16:9",
         resolution: str = "720p",
         duration_seconds: int = 8,
         negative_prompt: Optional[str] = None,
         seed: Optional[int] = None,
-        last_frame: Optional[Union[str, Image.Image]] = None,
-        reference_images: Optional[List[Union[str, Image.Image]]] = None,
+        last_frame: Optional[Image.Image] = None,
+        reference_images: Optional[List[Image.Image]] = None,
         person_generation: Optional[str] = None,
         enhance_prompt: Optional[bool] = None,
         generate_audio: Optional[bool] = None,
@@ -176,7 +176,7 @@ class Veo3Pipeline:
         
         Args:
             prompt: 文本提示词
-            image: 主图像（可选），如果提供则自动使用 i2av
+            images: 主图像（可选），如果提供则自动使用 i2av
             task_type: 任务类型，"auto" 自动判断，"t2av" 文本到视频，"i2av" 图像到视频
             aspect_ratio: 宽高比
             resolution: 分辨率
@@ -202,7 +202,7 @@ class Veo3Pipeline:
         # 使用 operator 预处理输入
         processed_data = self.process(
             prompt=prompt,
-            image=image,
+            images=images,
             aspect_ratio=aspect_ratio,
             resolution=resolution,
             duration_seconds=duration_seconds,

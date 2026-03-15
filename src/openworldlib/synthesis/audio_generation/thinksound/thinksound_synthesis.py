@@ -14,7 +14,6 @@ import torchaudio
 import numpy as np
 from loguru import logger
 from lightning.pytorch import seed_everything
-from prefigure.prefigure import get_all_args, push_wandb_config
 from huggingface_hub import snapshot_download, hf_hub_download
 
 from .ThinkSound.ThinkSound.models import create_model_from_config
@@ -23,12 +22,24 @@ from .ThinkSound.ThinkSound.inference.sampling import sample, sample_discrete_eu
 from ...base_synthesis import BaseSynthesis
 
 
-def load_models(args, device, logger_obj):
+def load_models(
+    model_config_path: str,
+    duration_sec: float,
+    compile_model: bool,
+    ckpt_path: str,
+    pretransform_ckpt_path: str,
+    device,
+    logger_obj,
+):
     """
     加载 ThinkSound 模型
     
     Args:
-        args: 配置参数，包含 model_config, ckpt_dir, pretransform_ckpt_path, duration_sec 等
+        model_config_path: 模型配置 json 路径
+        duration_sec: 音频时长（秒）
+        compile_model: 是否对模型进行 torch.compile
+        ckpt_path: 主模型权重路径
+        pretransform_ckpt_path: VAE 权重路径
         device: 设备 (cuda/cpu)
         logger_obj: 日志记录器
         
@@ -38,46 +49,69 @@ def load_models(args, device, logger_obj):
     """
 
     if logger_obj:
-        logger_obj.info(f"Loading ThinkSound model from {args.model_config}")
+        logger_obj.info(f"Loading ThinkSound model from {model_config_path}")
 
-    #Get JSON config from args.model_config
-    with open(args.model_config) as f:
+    # 加载 JSON 配置
+    with open(model_config_path) as f:
         model_config = json.load(f)
 
-    duration=(float)(args.duration_sec)
+    duration = float(duration_sec)
     model_config["sample_size"] = duration * model_config["sample_rate"]
-    model_config["model"]["diffusion"]["config"]["sync_seq_len"] = 24*int(duration)
-    model_config["model"]["diffusion"]["config"]["clip_seq_len"] = 8*int(duration)
-    model_config["model"]["diffusion"]["config"]["latent_seq_len"] = round(44100/64/32*duration)
+    model_config["model"]["diffusion"]["config"]["sync_seq_len"] = 24 * int(duration)
+    model_config["model"]["diffusion"]["config"]["clip_seq_len"] = 8 * int(duration)
+    model_config["model"]["diffusion"]["config"]["latent_seq_len"] = round(44100 / 64 / 32 * duration)
 
     model = create_model_from_config(model_config)
     
-    if args.compile:
+    if compile_model:
         model = torch.compile(model)
     
     # 加载主模型权重
-    model.load_state_dict(torch.load(args.ckpt_dir))
+    print(f"Loading main model weights from {ckpt_path}")
+    model.load_state_dict(torch.load(ckpt_path))
 
-    # 加载vae权重
-    load_vae_state = load_ckpt_state_dict(args.pretransform_ckpt_path, prefix='autoencoder.')
+    # 加载 VAE 权重
+    load_vae_state = load_ckpt_state_dict(pretransform_ckpt_path, prefix='autoencoder.')
     model.pretransform.load_state_dict(load_vae_state)
 
     return model, model_config
    
 
 class ThinkSoundSynthesis(BaseSynthesis):
-    def __init__(self, args, model_config, model, device, logger_obj):
+    def __init__(
+        self,
+        model_config_path: str,
+        duration_sec: float,
+        seed: int,
+        compile_model: bool,
+        ckpt_path: str,
+        pretransform_ckpt_path: str,
+        model_config,
+        model,
+        device,
+        logger_obj,
+    ):
         """
         初始化 ThinkSoundSynthesis
         
         Args:
-            args: 配置参数
+            model_config_path: 模型配置 json 路径
+            duration_sec: 音频时长（秒）
+            seed: 随机种子
+            compile_model: 是否对模型进行 torch.compile
+            ckpt_path: 主模型权重路径
+            pretransform_ckpt_path: VAE 权重路径
             model: ThinkSound 模型
             model_config: 模型配置字典
             device: 设备
             logger_obj: 日志记录器
         """
-        self.args = args
+        self.model_config_path = model_config_path
+        self.duration_sec = duration_sec
+        self.seed = seed
+        self.compile_model = compile_model
+        self.ckpt_path = ckpt_path
+        self.pretransform_ckpt_path = pretransform_ckpt_path
         self.model = model.to(device).eval()
         self.model_config = model_config
         self.device = device
@@ -90,8 +124,13 @@ class ThinkSoundSynthesis(BaseSynthesis):
     @classmethod
     def from_pretrained(
         cls, 
-        synthesis_model_path: str,
-        args, 
+        model_path: str,
+        model_config: Optional[str] = "src/openworldlib/synthesis/audio_generation/thinksound/ThinkSound/ThinkSound/configs/model_configs/thinksound.json",
+        duration_sec: float = 8.0,
+        seed: int = 42,
+        compile: bool = False,
+        ckpt_dir: Optional[str] = None,
+        pretransform_ckpt_path: Optional[str] = None,
         device=None, 
         logger_obj=None, 
         **kwargs
@@ -100,8 +139,13 @@ class ThinkSoundSynthesis(BaseSynthesis):
         从预训练模型路径加载 ThinkSoundSynthesis
         
         Args:
-            synthesis_model_path: 模型路径，可以是本地目录路径或 HuggingFace repo_id
-            args: 配置参数，包含 model_config, ckpt_dir, pretransform_ckpt_path 等
+            model_path: 模型路径，可以是本地目录路径或 HuggingFace repo_id
+            model_config: 模型配置 json 路径
+            duration_sec: 音频时长（秒）
+            seed: 随机种子
+            compile: 是否对模型进行 torch.compile
+            ckpt_dir: 主模型权重路径（可选，若为 None 则根据模型目录自动推断）
+            pretransform_ckpt_path: VAE 权重路径（可选，若为 None 则根据模型目录自动推断）
             device: 设备
             logger_obj: 日志记录器
             **kwargs: 额外参数
@@ -109,102 +153,103 @@ class ThinkSoundSynthesis(BaseSynthesis):
         Returns:
             ThinkSoundSynthesis 实例
         """
-        if os.path.isdir(synthesis_model_path):
-            model_root = synthesis_model_path
+        # 解析模型根目录（本地或 HuggingFace）
+        if os.path.isdir(model_path):
+            model_root = model_path
             if logger_obj:
                 logger_obj.info(f"Using local model directory: {model_root}")
             
-            # 假设模型文件在目录根目录或 ckpts 子目录中
-            if os.path.exists(os.path.join(model_root, "thinksound.ckpt")):
-                args.ckpt_dir = os.path.join(model_root, "thinksound.ckpt")
-            elif os.path.exists(os.path.join(model_root, "thinksound_light.ckpt")):
-                args.ckpt_dir = os.path.join(model_root, "thinksound_light.ckpt")
-            elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound.ckpt")):
-                args.ckpt_dir = os.path.join(model_root, "ckpts", "thinksound.ckpt")
-            elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound_light.ckpt")):
-                args.ckpt_dir = os.path.join(model_root, "ckpts", "thinksound_light.ckpt")
+            # 主模型权重路径
+            if ckpt_dir is None:
+                if os.path.exists(os.path.join(model_root, "thinksound_light.ckpt")):
+                    ckpt_dir = os.path.join(model_root, "thinksound_light.ckpt")
+                elif os.path.exists(os.path.join(model_root, "thinksound.ckpt")):
+                    ckpt_dir = os.path.join(model_root, "thinksound.ckpt")
+                elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound_light.ckpt")):
+                    ckpt_dir = os.path.join(model_root, "ckpts", "thinksound_light.ckpt")
+                elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound.ckpt")):
+                    ckpt_dir = os.path.join(model_root, "ckpts", "thinksound.ckpt")
             
-            # 更新 VAE 路径
-            if os.path.exists(os.path.join(model_root, "vae.ckpt")):
-                args.pretransform_ckpt_path = os.path.join(model_root, "vae.ckpt")
-            elif os.path.exists(os.path.join(model_root, "ckpts", "vae.ckpt")):
-                args.pretransform_ckpt_path = os.path.join(model_root, "ckpts", "vae.ckpt")
-            
-            # 更新 Synchformer 路径
-            if hasattr(args, 'synchformer_ckpt_path'):
-                if os.path.exists(os.path.join(model_root, "synchformer_state_dict.pth")):
-                    args.synchformer_ckpt_path = os.path.join(model_root, "synchformer_state_dict.pth")
-                elif os.path.exists(os.path.join(model_root, "ckpts", "synchformer_state_dict.pth")):
-                    args.synchformer_ckpt_path = os.path.join(model_root, "ckpts", "synchformer_state_dict.pth")
+            # VAE 路径
+            if pretransform_ckpt_path is None:
+                if os.path.exists(os.path.join(model_root, "vae.ckpt")):
+                    pretransform_ckpt_path = os.path.join(model_root, "vae.ckpt")
+                elif os.path.exists(os.path.join(model_root, "ckpts", "vae.ckpt")):
+                    pretransform_ckpt_path = os.path.join(model_root, "ckpts", "vae.ckpt")
 
         else:
             if logger_obj:
-                logger_obj.info(f"Downloading weights from HuggingFace repo: {synthesis_model_path}")
+                logger_obj.info(f"Downloading weights from HuggingFace repo: {model_path}")
             else:
-                print(f"Downloading weights from HuggingFace repo: {synthesis_model_path}")
+                print(f"Downloading weights from HuggingFace repo: {model_path}")
             
             download_dir = os.path.join(os.getcwd(), "hugid")
             os.makedirs(download_dir, exist_ok=True)
             
-            model_root = snapshot_download(synthesis_model_path, local_dir=download_dir)
+            model_root = snapshot_download(model_path, local_dir=download_dir)
             
             if logger_obj:
                 logger_obj.info(f"Model downloaded to: {model_root}")
             else:
                 print(f"Model downloaded to: {model_root}")
             
-            # 更新 args 中的路径
             # 尝试查找模型文件（根据 HuggingFace 仓库的实际结构）
-            if os.path.exists(os.path.join(model_root, "thinksound.ckpt")):
-                args.ckpt_dir = os.path.join(model_root, "thinksound.ckpt")
-            elif os.path.exists(os.path.join(model_root, "thinksound_light.ckpt")):
-                args.ckpt_dir = os.path.join(model_root, "thinksound_light.ckpt")
-            elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound.ckpt")):
-                args.ckpt_dir = os.path.join(model_root, "ckpts", "thinksound.ckpt")
-            elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound_light.ckpt")):
-                args.ckpt_dir = os.path.join(model_root, "ckpts", "thinksound_light.ckpt")
+            if ckpt_dir is None:
+                if os.path.exists(os.path.join(model_root, "thinksound_light.ckpt")):
+                    ckpt_dir = os.path.join(model_root, "thinksound_light.ckpt")
+                elif os.path.exists(os.path.join(model_root, "thinksound.ckpt")):
+                    ckpt_dir = os.path.join(model_root, "thinksound.ckpt")
+                elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound_light.ckpt")):
+                    ckpt_dir = os.path.join(model_root, "ckpts", "thinksound_light.ckpt")
+                elif os.path.exists(os.path.join(model_root, "ckpts", "thinksound.ckpt")):
+                    ckpt_dir = os.path.join(model_root, "ckpts", "thinksound.ckpt")
 
-            
-            # 更新 VAE 路径
-            if os.path.exists(os.path.join(model_root, "vae.ckpt")):
-                args.pretransform_ckpt_path = os.path.join(model_root, "vae.ckpt")
-            elif os.path.exists(os.path.join(model_root, "ckpts", "vae.ckpt")):
-                args.pretransform_ckpt_path = os.path.join(model_root, "ckpts", "vae.ckpt")
-
-            
-            # 更新 Synchformer 路径
-            if hasattr(args, 'synchformer_ckpt_path'):
-                if os.path.exists(os.path.join(model_root, "synchformer_state_dict.pth")):
-                    args.synchformer_ckpt_path = os.path.join(model_root, "synchformer_state_dict.pth")
-                elif os.path.exists(os.path.join(model_root, "ckpts", "synchformer_state_dict.pth")):
-                    args.synchformer_ckpt_path = os.path.join(model_root, "ckpts", "synchformer_state_dict.pth")
+            if pretransform_ckpt_path is None:
+                if os.path.exists(os.path.join(model_root, "vae.ckpt")):
+                    pretransform_ckpt_path = os.path.join(model_root, "vae.ckpt")
+                elif os.path.exists(os.path.join(model_root, "ckpts", "vae.ckpt")):
+                    pretransform_ckpt_path = os.path.join(model_root, "ckpts", "vae.ckpt")
 
 
         if logger_obj:
-            logger_obj.info(f"Loading ThinkSound synthesis model from config: {args.model_config}")
-            logger_obj.info(f"Using checkpoint: {args.ckpt_dir}")
-            logger_obj.info(f"Using VAE checkpoint: {args.pretransform_ckpt_path}")
-            if hasattr(args, 'synchformer_ckpt_path'):
-                logger_obj.info(f"Using Synchformer checkpoint: {args.synchformer_ckpt_path}")
+            logger_obj.info(f"Loading ThinkSound synthesis model from config: {model_config}")
+            logger_obj.info(f"Using checkpoint: {ckpt_dir}")
+            logger_obj.info(f"Using VAE checkpoint: {pretransform_ckpt_path}")
 
         if device is None:
             device = "cuda" if torch.cuda.is_available() else "cpu"
 
-        seed = args.seed
         if os.environ.get("SLURM_PROCID") is not None:
             seed += int(os.environ.get("SLURM_PROCID"))
 
-        seed_everything(seed, workers=True)
+        seed_value = seed
+        if os.environ.get("SLURM_PROCID") is not None:
+            seed_value += int(os.environ.get("SLURM_PROCID"))
+
+        seed_everything(seed_value, workers=True)
 
         torch.set_grad_enabled(False)
         
-        model, model_config = load_models(args, device, logger_obj)
-        return cls(
-            args=args,
-            model=model,
-            model_config=model_config,
+        model, model_config = load_models(
+            model_config_path=model_config,
+            duration_sec=duration_sec,
+            compile_model=compile,
+            ckpt_path=ckpt_dir,
+            pretransform_ckpt_path=pretransform_ckpt_path,
+            device=device,
             logger_obj=logger_obj,
-            device=device
+        )
+        return cls(
+            model_config_path=model_config,
+            duration_sec=duration_sec,
+            seed=seed,
+            compile_model=compile,
+            ckpt_path=ckpt_dir,
+            pretransform_ckpt_path=pretransform_ckpt_path,
+            model_config=model_config,
+            model=model,
+            logger_obj=logger_obj,
+            device=device,
         )
 
 
