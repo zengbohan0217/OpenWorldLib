@@ -27,6 +27,8 @@ show_help() {
     echo "  pi0-all             : Run both PI0 and PI0.5 tests on all datasets"
     echo "  lingbot-va          : Run LingBot-VA test"
     echo "  giga-brain-0        : Run GigaBrain-0 test"
+    echo "  spirit-v1p5         : Run Spirit-v1.5 inference test"
+    echo "  spirit-v1p5-libero  : Run Spirit-v1.5 inference + LIBERO visualization test"
     echo "  all                 : Run all VLA tests"
     echo ""
     echo "PI0/PI0.5 extra options (passed through to test_pi0.py):"
@@ -37,6 +39,8 @@ show_help() {
     echo "  bash scripts/test_inference/test_vla.sh pi0 --dataset aloha droid"
     echo "  bash scripts/test_inference/test_vla.sh pi05 --dataset libero"
     echo "  bash scripts/test_inference/test_vla.sh pi0-all --dataset droid"
+    echo "  bash scripts/test_inference/test_vla.sh spirit-v1p5"
+    echo "  bash scripts/test_inference/test_vla.sh spirit-v1p5-libero"
     echo "  bash scripts/test_inference/test_vla.sh all"
     echo ""
 }
@@ -83,37 +87,61 @@ case $METHOD_NAME in
         echo "============================================================"
         CUDA_VISIBLE_DEVICES=0 python test/test_giga_brain_0.py
         ;;
+    "spirit-v1p5")
+        echo "============================================================"
+        echo "  Executing: Spirit-v1.5 test"
+        echo "============================================================"
+        CUDA_VISIBLE_DEVICES=0 python test/test_spirit_v1p5.py
+        ;;
+    "spirit-v1p5-libero")
+        echo "============================================================"
+        echo "  Executing: Spirit-v1.5 + LIBERO visualization test"
+        echo "============================================================"
+        CUDA_VISIBLE_DEVICES=0 python test/test_spirit_v1p5_libero.py
+        ;;
     "all")
         echo "============================================================"
         echo "  Executing: ALL VLA tests"
         echo "============================================================"
         echo ""
 
-        echo "[1/3] PI0 + PI0.5 tests..."
+        echo "[1/5] PI0 + PI0.5 tests..."
         CUDA_VISIBLE_DEVICES=0 python test/test_pi0.py --model all
         PI0_EXIT=$?
 
         echo ""
-        echo "[2/3] LingBot-VA test..."
+        echo "[2/5] LingBot-VA test..."
         CUDA_VISIBLE_DEVICES=0 python test/test_lingbot_va.py
         LINGBOT_EXIT=$?
 
         echo ""
-        echo "[3/3] GigaBrain-0 test..."
+        echo "[3/5] GigaBrain-0 test..."
         CUDA_VISIBLE_DEVICES=0 python test/test_giga_brain_0.py
         GIGA_EXIT=$?
+
+        echo ""
+        echo "[4/5] Spirit-v1.5 test..."
+        CUDA_VISIBLE_DEVICES=0 python test/test_spirit_v1p5.py
+        SPIRIT_EXIT=$?
+
+        echo ""
+        echo "[5/5] Spirit-v1.5 + LIBERO visualization test..."
+        CUDA_VISIBLE_DEVICES=0 python test/test_spirit_v1p5_libero.py
+        SPIRIT_LIBERO_EXIT=$?
 
         echo ""
         echo "============================================================"
         echo "  Summary"
         echo "============================================================"
-        echo "  PI0/PI0.5:   $([ $PI0_EXIT -eq 0 ] && echo 'PASS' || echo 'FAIL')"
-        echo "  LingBot-VA:  $([ $LINGBOT_EXIT -eq 0 ] && echo 'PASS' || echo 'FAIL')"
-        echo "  GigaBrain-0: $([ $GIGA_EXIT -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+        echo "  PI0/PI0.5:            $([ $PI0_EXIT -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+        echo "  LingBot-VA:           $([ $LINGBOT_EXIT -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+        echo "  GigaBrain-0:          $([ $GIGA_EXIT -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+        echo "  Spirit-v1.5:          $([ $SPIRIT_EXIT -eq 0 ] && echo 'PASS' || echo 'FAIL')"
+        echo "  Spirit-v1.5+LIBERO:   $([ $SPIRIT_LIBERO_EXIT -eq 0 ] && echo 'PASS' || echo 'FAIL')"
         echo "============================================================"
 
         # Exit with failure if any test failed
-        if [ $PI0_EXIT -ne 0 ] || [ $LINGBOT_EXIT -ne 0 ] || [ $GIGA_EXIT -ne 0 ]; then
+        if [ $PI0_EXIT -ne 0 ] || [ $LINGBOT_EXIT -ne 0 ] || [ $GIGA_EXIT -ne 0 ] || [ $SPIRIT_EXIT -ne 0 ] || [ $SPIRIT_LIBERO_EXIT -ne 0 ]; then
             exit 1
         fi
         ;;
