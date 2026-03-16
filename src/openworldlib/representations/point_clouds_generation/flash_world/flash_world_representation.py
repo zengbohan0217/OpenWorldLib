@@ -125,9 +125,16 @@ class FlashWorldRepresentation(BaseRepresentation):
         offload_t5 = kwargs.get('offload_t5', False)
         offload_vae = kwargs.get('offload_vae', False)
         offload_transformer_during_vae = kwargs.get('offload_transformer_during_vae', False)
-        
-        # Initialize GenerationSystem
+        wan_model_path = kwargs.get("wan_model_path")
+        if wan_model_path is None:
+            raise ValueError(
+                "wan_model_path is required. Pass it via pipeline: "
+                "FlashWorldPipeline.from_pretrained(..., required_components={'wan_model_path': '...'})"
+            )
+
+        # Initialize GenerationSystem (wan_model_path from pipeline required_components only)
         generation_system = GenerationSystem(
+            wan_model_path=wan_model_path,
             ckpt_path=ckpt_path,
             device=device,
             offload_t5=offload_t5,
@@ -250,7 +257,15 @@ class FlashWorldRepresentation(BaseRepresentation):
 class GenerationSystem(nn.Module):
     """FlashWorld Generation System."""
     
-    def __init__(self, ckpt_path=None, device="cuda", offload_t5=False, offload_vae=False, offload_transformer_during_vae=False):
+    def __init__(
+        self,
+        wan_model_path: str,
+        ckpt_path=None,
+        device="cuda",
+        offload_t5=False,
+        offload_vae=False,
+        offload_transformer_during_vae=False,
+    ):
         super().__init__()
         # Convert device string to torch.device, defaulting to cuda:0 if just "cuda" is provided
         if isinstance(device, str):
@@ -274,9 +289,7 @@ class GenerationSystem(nn.Module):
 
         self.denoising_steps = [0, 250, 500, 750]
 
-        model_id = "Wan-AI/Wan2.2-TI2V-5B-Diffusers"
-
-        self.vae = AutoencoderKLWan.from_pretrained(model_id, subfolder="vae", torch_dtype=torch.float).eval()
+        self.vae = AutoencoderKLWan.from_pretrained(wan_model_path, subfolder="vae", torch_dtype=torch.float).eval()
 
         from .flash_world.autoencoder_kl_wan import WanCausalConv3d
         with torch.no_grad():
@@ -292,11 +305,11 @@ class GenerationSystem(nn.Module):
         self.register_buffer('latents_mean', torch.tensor(self.vae.config.latents_mean).float().view(1, self.vae.config.z_dim, 1, 1, 1).to(self.device))
         self.register_buffer('latents_std', torch.tensor(self.vae.config.latents_std).float().view(1, self.vae.config.z_dim, 1, 1, 1).to(self.device))
 
-        self.tokenizer = T5TokenizerFast.from_pretrained(model_id, subfolder="tokenizer")
+        self.tokenizer = T5TokenizerFast.from_pretrained(wan_model_path, subfolder="tokenizer")
 
-        self.text_encoder = UMT5EncoderModel.from_pretrained(model_id, subfolder="text_encoder", torch_dtype=torch.float32).eval().requires_grad_(False).to(self.device if not self.offload_t5 else "cpu")
+        self.text_encoder = UMT5EncoderModel.from_pretrained(wan_model_path, subfolder="text_encoder", torch_dtype=torch.float32).eval().requires_grad_(False).to(self.device if not self.offload_t5 else "cpu")
 
-        self.transformer = WanTransformer3DModel.from_pretrained(model_id, subfolder="transformer", torch_dtype=torch.float32).train().requires_grad_(False)
+        self.transformer = WanTransformer3DModel.from_pretrained(wan_model_path, subfolder="transformer", torch_dtype=torch.float32).train().requires_grad_(False)
         
         self.transformer.patch_embedding.weight = nn.Parameter(torch.nn.functional.pad(self.transformer.patch_embedding.weight, (0, 0, 0, 0, 0, 0, 0, 6 + self.latent_dim)))
         
@@ -311,7 +324,7 @@ class GenerationSystem(nn.Module):
 
         self.recon_decoder = WANDecoderPixelAligned3DGSReconstructionModel(self.vae, self.feat_dim, use_render_checkpointing=True, use_network_checkpointing=False).train().requires_grad_(False)
 
-        self.scheduler = MyFlowMatchEulerDiscreteScheduler.from_pretrained(model_id, subfolder="scheduler", shift=3)
+        self.scheduler = MyFlowMatchEulerDiscreteScheduler.from_pretrained(wan_model_path, subfolder="scheduler", shift=3)
 
         self.register_buffer('timesteps', self.scheduler.timesteps.clone().to(self.device))
 
