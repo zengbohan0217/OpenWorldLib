@@ -147,7 +147,7 @@ class GigaBrain0Pipeline:
     def process(
         self,
         images: dict[str, ImageInput],
-        task: str,
+        prompt: str,
         state: torch.Tensor,
         pad_state: bool = True,
         add_batch_dim: bool = True,
@@ -159,7 +159,7 @@ class GigaBrain0Pipeline:
 
         proc_images, img_masks, image_transform_params, proc_state = self.operator.process_perception(tensor_images, state, pad_state=pad_state)
         state = cast(torch.Tensor, proc_state)
-        lang_tokens, lang_masks, _, _, _, _ = self.operator.process_interaction(task=task, state=state)
+        lang_tokens, lang_masks, _, _, _, _ = self.operator.process_interaction(task=prompt, state=state)
 
         if add_batch_dim:
             proc_images = [img.unsqueeze(0) for img in proc_images]
@@ -190,15 +190,15 @@ class GigaBrain0Pipeline:
     def __call__(
         self,
         images: dict[str, ImageInput],
-        task: str,
+        prompt: str,
         state: torch.Tensor,
         enable_2d_traj_output: bool = False,
         autoregressive_mode_only: bool = False,
     ) -> torch.Tensor | tuple[torch.Tensor, torch.Tensor]:
         if autoregressive_mode_only:
-            return self.predict_autoregressive_actions(images, task, state)
+            return self.predict_autoregressive_actions(images, prompt, state)
 
-        processed = self.process(images, task, state, pad_state=True, add_batch_dim=True)
+        processed = self.process(images, prompt, state, pad_state=True, add_batch_dim=True)
 
         outputs = self.synthesis.predict(
             images=processed['images'],
@@ -238,12 +238,12 @@ class GigaBrain0Pipeline:
         return pred_action
 
     @torch.no_grad()
-    def predict_current_subtask(self, images: dict[str, ImageInput], task: str) -> list[str]:
+    def predict_current_subtask(self, images: dict[str, ImageInput], prompt: str) -> list[str]:
         tokenizer = self.operator.tokenizer
 
         tensor_images: dict[str, torch.Tensor] = {k: _to_tensor(v).to(self.device) for k, v in images.items()}
         proc_images, img_masks, _, _ = self.operator.process_perception(tensor_images, state=torch.empty(0), pad_state=False)
-        lang_tokens, lang_masks, _, _, _, _ = self.operator.process_interaction(task=task)
+        lang_tokens, lang_masks, _, _, _, _ = self.operator.process_interaction(task=prompt)
 
         for i in range(len(proc_images)):
             proc_images[i] = proc_images[i][None, ...]
@@ -257,9 +257,9 @@ class GigaBrain0Pipeline:
 
     @torch.no_grad()
     def predict_autoregressive_actions(
-        self, images: dict[str, ImageInput], task: str, state: torch.Tensor, max_new_tokens: int = 200
+        self, images: dict[str, ImageInput], prompt: str, state: torch.Tensor, max_new_tokens: int = 200
     ) -> torch.Tensor:
-        processed = self.process(images, task, state, pad_state=False, add_batch_dim=False)
+        processed = self.process(images, prompt, state, pad_state=False, add_batch_dim=False)
         proc_images: list[torch.Tensor] = processed['images']
         img_masks: list[torch.Tensor] = processed['img_masks']
         lang_tokens: torch.Tensor = processed['lang_tokens']

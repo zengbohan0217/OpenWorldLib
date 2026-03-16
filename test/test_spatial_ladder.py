@@ -37,7 +37,7 @@ def test_spatial_ladder_pipeline_pil_image():
     pil_image = Image.open(IMAGE_PATH).convert("RGB")
     instruction = "Describe the scene."
     output = pipe(
-        instruction=instruction,
+        prompt=instruction,
         images=pil_image,
         max_new_tokens=64,
     )
@@ -55,7 +55,7 @@ def test_spatial_ladder_pipeline_pil_video():
     frames = load_video_frames(VIDEO_PATH, max_frames=8)
     instruction = "Summarize the video content."
     output = pipe(
-        instruction=instruction,
+        prompt=instruction,
         videos=frames,
         max_new_tokens=64,
     )

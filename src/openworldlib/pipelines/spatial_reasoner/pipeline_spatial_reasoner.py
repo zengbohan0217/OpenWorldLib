@@ -46,7 +46,7 @@ class SpatialReasonerPipeline:
         self,
         images: Optional[Union[str, PILImage.Image, Sequence[Union[str, PILImage.Image]]]],
         videos: Optional[Union[str, List[PILImage.Image], Sequence[Union[str, List[PILImage.Image]]]]],
-        instruction: str,
+        prompt: str,
     ):
         if images is None:
             images = []
@@ -64,19 +64,19 @@ class SpatialReasonerPipeline:
 
         content = [{"type": "image", "image": img} for img in images]
         content += [{"type": "video", "video": vid} for vid in videos]
-        content.append({"type": "text", "text": instruction})
+        content.append({"type": "text", "text": prompt})
         return [{"role": "user", "content": content}]
 
     def __call__(
         self,
-        instruction: str,
+        prompt: str,
         images: Optional[Union[str, PILImage.Image, Sequence[Union[str, PILImage.Image]]]] = None,
         videos: Optional[Union[str, List[PILImage.Image], Sequence[Union[str, List[PILImage.Image]]]]] = None,
         max_new_tokens: int = 2048,
         messages: Optional[list] = None,
         generation_kwargs: Optional[dict] = None,
     ) -> List[str]:
-        self.operator.get_interaction(instruction)
+        self.operator.get_interaction(prompt)
         self.operator.process_interaction()
 
         if messages is None:
@@ -84,7 +84,7 @@ class SpatialReasonerPipeline:
                 self._build_messages(
                     images=images,
                     videos=videos,
-                    instruction=instruction,
+                    prompt=prompt,
                 )
             ]
         else:

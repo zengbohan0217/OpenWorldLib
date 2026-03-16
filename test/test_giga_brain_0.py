@@ -94,7 +94,7 @@ if __name__ == '__main__':
     task = meta_data['task']
     state = torch.tensor(meta_data['observation']['state'], dtype=torch.float32)
 
-    result = pipe(images, task, state)
+    result = pipe(images, prompt=task, state=state)
     pred_action = result if isinstance(result, torch.Tensor) else result[0]
     visualize_action(
         pred_action.detach().cpu().numpy(),

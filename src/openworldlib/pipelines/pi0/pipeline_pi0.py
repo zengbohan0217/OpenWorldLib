@@ -99,7 +99,7 @@ class PI0Pipeline:
     def process(
         self,
         images: dict[str, str | PILImage.Image],
-        task: str,
+        prompt: str,
         state: torch.Tensor,
         add_batch_dim: bool = True,
     ):
@@ -107,7 +107,7 @@ class PI0Pipeline:
         
         Expects single-sample inputs (no batch dimension):
           - images: dict mapping image key -> file path (str) or PIL.Image
-          - task: str
+          - prompt: str
           - state: (state_dim,) tensor
         """
         ori_device = state.device if state is not None else self.device
@@ -117,7 +117,7 @@ class PI0Pipeline:
         images, img_masks, state = self.operator.process_perception(images, state, pad_state=True)
 
         # Process interaction (operates on single-sample: state 1D)
-        lang_tokens, lang_masks = self.operator.process_interaction(task=task, state=state)
+        lang_tokens, lang_masks = self.operator.process_interaction(task=prompt, state=state)
 
         if add_batch_dim:
             images = [img.unsqueeze(0) for img in images]
@@ -139,20 +139,20 @@ class PI0Pipeline:
     def __call__(
         self,
         images: dict[str, str | PILImage.Image],
-        task: str,
+        prompt: str,
         state: torch.Tensor,
     ) -> torch.Tensor:
         """Run one forward pass from raw inputs to final action sequence.
 
         Args:
             images: Observation images of the robot. Each value is a file path (str) or PIL.Image.
-            task: Natural language task description.
+            prompt: Natural language task description.
             state: The robot joint state tensor with shape (state_dim,).
 
         Returns:
             A tensor of predicted actions with shape (num_steps, original_action_dim) on the original input device.
         """
-        processed = self.process(images, task, state, add_batch_dim=True)
+        processed = self.process(images, prompt, state, add_batch_dim=True)
 
         outputs = self.synthesis.predict(
             images=processed['images'],

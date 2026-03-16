@@ -116,7 +116,7 @@ def run(name: str, cfg: dict) -> None:
     )
     pipe.compile()
 
-    pred = pipe(cfg['img_files'], task, state)
+    pred = pipe(cfg['img_files'], prompt=task, state=state)
     print(f'  [{name}] pred shape: {pred.shape},  sample: {pred[0, :cfg["action_dim"]].tolist()}')
     visualize_action(pred.detach().cpu().numpy(), cfg['out_path'], cfg['action_dim'])
     del pipe
