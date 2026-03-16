@@ -62,11 +62,11 @@ if __name__ == '__main__':
     with open(norm_stats_path, 'r') as f:
         norm_stat = json.load(f)
 
-    # Load initial multi-view images
+    # Load initial multi-view images as PIL.Image
     img_dict = {}
     for k in OBS_CAM_KEYS:
         img_path = os.path.join(IMAGE_DIR, f'{k}.png')
-        img_dict[k] = np.array(Image.open(img_path).convert('RGB'))
+        img_dict[k] = Image.open(img_path).convert('RGB')
 
     # Build pipeline
     pipe = LingBotVAPipeline.from_pretrained(

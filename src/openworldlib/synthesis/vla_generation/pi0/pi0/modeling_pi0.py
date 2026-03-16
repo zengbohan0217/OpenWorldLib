@@ -531,7 +531,7 @@ class PI0Policy(ModelMixin, ConfigMixin):
         return v_t
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_path: str, **kwargs: Any) -> 'PI0Policy':
+    def from_pretrained(cls, pretrained_model_path: str, weight_dtype: torch.dtype | None = None, **kwargs: Any) -> 'PI0Policy':
         """Load a PI0Policy from a pretrained model.
 
         This method supports loading from:
@@ -541,6 +541,7 @@ class PI0Policy(ModelMixin, ConfigMixin):
 
         Args:
             pretrained_model_path: Path to the model directory or hub model id.
+            weight_dtype: Optional dtype to cast the model weights to after loading.
             **kwargs: Additional arguments passed to the model constructor.
 
         Returns:
@@ -609,5 +610,8 @@ class PI0Policy(ModelMixin, ConfigMixin):
 
         # Load weights from safetensors
         _load_safetensors_weights(model, model_file_path)
+
+        if weight_dtype is not None:
+            model = model.to(dtype=weight_dtype)
 
         return model

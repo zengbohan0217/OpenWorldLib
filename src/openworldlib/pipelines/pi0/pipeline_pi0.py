@@ -1,6 +1,7 @@
 from typing import Any
 
 import torch
+from PIL import Image as PILImage
 
 from ...operators.pi0_operator import PI0Operator
 from ...synthesis.vla_generation.pi0.pi0_synthesis import PI0Synthesis
@@ -31,12 +32,13 @@ class PI0Pipeline:
     def from_pretrained(
         cls,
         model_path: str,
-        tokenizer_model_path: str,
-        state_norm_stats: dict,
-        action_norm_stats: dict,
+        required_components: dict[str, str] | None = None,
+        state_norm_stats: dict | None = None,
+        action_norm_stats: dict | None = None,
         original_action_dim: int = 14,
         discrete_state_input: bool = False,
         device: str | torch.device | None = None,
+        weight_dtype: torch.dtype | None = None,
         present_img_keys: list[str] | None = None,
         robot_type: str = 'aloha',
         use_delta_actions: bool = True,
@@ -45,13 +47,17 @@ class PI0Pipeline:
         """Create a PI0Pipeline from pretrained model.
 
         Args:
-            model_path: Path to the pretrained PI0 policy weights.
-            tokenizer_model_path: Path or hub id for the tokenizer used in prompt processing.
+            model_path: HuggingFace model ID or local path to the main model.
+            required_components: Additional components to load beyond the main model,
+                as a dict mapping component name to HuggingFace ID or local path.
+                e.g. ``{"tokenizer": "google/paligemma-3b-mix-224"}``.
             state_norm_stats: Normalization stats for robot state; either {'mean','std'} or {'q01','q99'}.
             action_norm_stats: Normalization stats for actions; either {'mean','std'} or {'q01','q99'}.
             original_action_dim: Dimension of the environment's native action space before padding.
             discrete_state_input: If True, enables PI0.5 mode with discrete state input.
-            device: Device to run inference on.
+            device: Device to load all models onto, e.g. ``"cuda:0"`` or ``"cpu"``.
+            weight_dtype: Weight dtype for all models in the pipeline, e.g. ``torch.float16``
+                or ``torch.bfloat16``. Defaults to ``None`` (uses the model's original dtype).
             present_img_keys: List of image keys to use.
             robot_type: One of 'aloha', 'libero', 'droid'.
             use_delta_actions: Whether the model uses delta actions (requires absolute conversion on output).
@@ -59,10 +65,13 @@ class PI0Pipeline:
         Returns:
             PI0Pipeline instance.
         """
-        synthesis = PI0Synthesis.from_pretrained(model_path, device=device, **policy_kwargs)
+        required_components = required_components or {}
+        tokenizer_model_path = required_components.get('tokenizer', 'google/paligemma-3b-mix-224')
+
+        synthesis = PI0Synthesis.from_pretrained(model_path, device=device, weight_dtype=weight_dtype, **policy_kwargs)
         operator = PI0Operator(
-            state_norm_stats=state_norm_stats,
-            action_norm_stats=action_norm_stats,
+            state_norm_stats=state_norm_stats or {},
+            action_norm_stats=action_norm_stats or {},
             tokenizer_model_path=tokenizer_model_path,
             robot_type=robot_type,
             resize_imgs_with_padding=(224, 224),
@@ -89,7 +98,7 @@ class PI0Pipeline:
 
     def process(
         self,
-        images: dict[str, torch.Tensor],
+        images: dict[str, str | PILImage.Image],
         task: str,
         state: torch.Tensor,
         add_batch_dim: bool = True,
@@ -97,7 +106,7 @@ class PI0Pipeline:
         """Preprocess inputs (perception + interaction) to build model-ready tensors.
         
         Expects single-sample inputs (no batch dimension):
-          - images: dict of (C, H, W) tensors
+          - images: dict mapping image key -> file path (str) or PIL.Image
           - task: str
           - state: (state_dim,) tensor
         """
@@ -129,14 +138,14 @@ class PI0Pipeline:
     @torch.no_grad()
     def __call__(
         self,
-        images: dict[str, torch.Tensor],
+        images: dict[str, str | PILImage.Image],
         task: str,
         state: torch.Tensor,
     ) -> torch.Tensor:
         """Run one forward pass from raw inputs to final action sequence.
 
         Args:
-            images: Observation images of the robot. Each value is a tensor with shape (C,H,W).
+            images: Observation images of the robot. Each value is a file path (str) or PIL.Image.
             task: Natural language task description.
             state: The robot joint state tensor with shape (state_dim,).
 

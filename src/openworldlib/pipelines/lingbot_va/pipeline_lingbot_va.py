@@ -7,6 +7,7 @@ from typing import Any
 
 import numpy as np
 import torch
+from PIL import Image as PILImage
 
 from ...operators.lingbot_va_operator import LingBotVAOperator
 from ...synthesis.vla_generation.lingbot_va.lingbot_va_synthesis import LingBotVASynthesis
@@ -48,7 +49,7 @@ class LingBotVAPipeline:
         cls,
         model_path: str,
         device: str | torch.device | None = None,
-        param_dtype: torch.dtype = torch.bfloat16,
+        weight_dtype: torch.dtype = torch.bfloat16,
         patch_size: tuple[int, int, int] = (1, 2, 2),
         env_type: str = 'robotwin_tshape',
         height: int = 256,
@@ -80,7 +81,7 @@ class LingBotVAPipeline:
 
         from types import SimpleNamespace
         config = SimpleNamespace(
-            param_dtype=param_dtype,
+            param_dtype=weight_dtype,
             patch_size=patch_size,
             env_type=env_type,
             height=height,
@@ -113,7 +114,7 @@ class LingBotVAPipeline:
 
     def process(
         self,
-        images: dict[str, np.ndarray] | list[dict[str, np.ndarray]],
+        images: dict[str, str | PILImage.Image],
         prompt: str,
     ) -> dict[str, Any]:
         """Preprocess inputs using the operator."""
@@ -127,7 +128,7 @@ class LingBotVAPipeline:
     @torch.no_grad()
     def __call__(
         self,
-        images: dict[str, np.ndarray] | list[dict[str, np.ndarray]],
+        images: dict[str, str | PILImage.Image],
         prompt: str,
         num_chunks: int = 10,
         decode_video: bool = False,

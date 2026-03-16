@@ -2,6 +2,7 @@ import math
 import random
 from typing import Any
 
+from sympy import use
 import torch
 import torch.nn.functional as F
 from torchvision import transforms
@@ -728,6 +729,7 @@ class GigaBrain0Operator(BaseOperator):
         discrete_state_input: bool = True,
         autoregressive_inference_mode: bool = False,
         text_max_length: int = 200,
+        use_quantiles: bool = True,
     ) -> None:
         super().__init__()
         self.device = 'cpu'
@@ -737,9 +739,9 @@ class GigaBrain0Operator(BaseOperator):
         self.interaction_template_init()
 
         # Transforms
-        self.state_normalize = Normalize({embodiment_id: state_norm_stats}, use_quantiles=True)
-        self.state_unnormalize = Unnormalize({embodiment_id: state_norm_stats}, use_quantiles=True)
-        self.action_unnormalize = Unnormalize({embodiment_id: action_norm_stats}, use_quantiles=True)
+        self.state_normalize = Normalize({embodiment_id: state_norm_stats}, use_quantiles=use_quantiles)
+        self.state_unnormalize = Unnormalize({embodiment_id: state_norm_stats}, use_quantiles=use_quantiles)
+        self.action_unnormalize = Unnormalize({embodiment_id: action_norm_stats}, use_quantiles=use_quantiles)
         self.absolute_actions = AbsoluteActions({embodiment_id: delta_mask})
         self.pad_states_actions = PadStatesAndActions(action_dim=None)  # will be set later by pipeline
 

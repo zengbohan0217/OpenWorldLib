@@ -58,7 +58,7 @@ class LingBotVASynthesis(BaseSynthesis):
     @classmethod
     def from_pretrained(
         cls,
-        pretrained_model_path: str,
+        model_path: str,
         config: Any = None,
         device: str | torch.device | None = None,
         **kwargs: Any,
@@ -66,19 +66,19 @@ class LingBotVASynthesis(BaseSynthesis):
         if config is None:
             raise ValueError("config must be provided.")
         device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
-        config.wan22_pretrained_model_name_or_path = pretrained_model_path
+        config.wan22_pretrained_model_name_or_path = model_path
         dtype = config.param_dtype
 
-        vae = load_vae(os.path.join(pretrained_model_path, 'vae'), torch_dtype=dtype, torch_device=device)
+        vae = load_vae(os.path.join(model_path, 'vae'), torch_dtype=dtype, torch_device=device)
         streaming_vae = WanVAEStreamingWrapper(vae)
 
-        tokenizer = load_tokenizer(os.path.join(pretrained_model_path, 'tokenizer'))
-        text_encoder = load_text_encoder(os.path.join(pretrained_model_path, 'text_encoder'), torch_dtype=dtype, torch_device=device)
-        transformer = load_transformer(os.path.join(pretrained_model_path, 'transformer'), torch_dtype=dtype, torch_device=device)
+        tokenizer = load_tokenizer(os.path.join(model_path, 'tokenizer'))
+        text_encoder = load_text_encoder(os.path.join(model_path, 'text_encoder'), torch_dtype=dtype, torch_device=device)
+        transformer = load_transformer(os.path.join(model_path, 'transformer'), torch_dtype=dtype, torch_device=device)
 
         streaming_vae_half = None
         if config.env_type == 'robotwin_tshape':
-            vae_half = load_vae(os.path.join(pretrained_model_path, 'vae'), torch_dtype=dtype, torch_device=device)
+            vae_half = load_vae(os.path.join(model_path, 'vae'), torch_dtype=dtype, torch_device=device)
             streaming_vae_half = WanVAEStreamingWrapper(vae_half)
 
         scheduler = FlowMatchScheduler(shift=config.snr_shift, sigma_min=0.0, extra_one_step=True)

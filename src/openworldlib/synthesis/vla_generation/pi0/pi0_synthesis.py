@@ -34,9 +34,9 @@ class PI0Synthesis(BaseSynthesis):
         return self.policy.pi05_enabled
 
     @classmethod
-    def from_pretrained(cls, pretrained_model_path: str, device: str | torch.device | None = None, **kwargs) -> "PI0Synthesis":
+    def from_pretrained(cls, pretrained_model_path: str, device: str | torch.device | None = None, weight_dtype: torch.dtype | None = None, **kwargs) -> "PI0Synthesis":
         device = device or ('cuda' if torch.cuda.is_available() else 'cpu')
-        policy = PI0Policy.from_pretrained(pretrained_model_path, **kwargs)
+        policy = PI0Policy.from_pretrained(pretrained_model_path, weight_dtype=weight_dtype, **kwargs)
         return cls(policy=policy, device=device)
 
     def to(self, device: str | torch.device):

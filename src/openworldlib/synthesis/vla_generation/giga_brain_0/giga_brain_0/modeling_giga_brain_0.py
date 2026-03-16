@@ -60,10 +60,10 @@ class GigaBrain0Policy(ModelMixin, ConfigMixin):
             )
 
         # Projections are float32
-        self.action_in_proj = EmbodimentSpecificLinear(self.max_action_dim, self.proj_width, num_categories=num_embodiments, dtype=torch.float32)
-        self.action_out_proj = EmbodimentSpecificLinear(self.proj_width, self.max_action_dim, num_categories=num_embodiments, dtype=torch.float32)
-        self.time_mlp_in = nn.Linear(self.proj_width, self.proj_width, dtype=torch.float32)
-        self.time_mlp_out = nn.Linear(self.proj_width, self.proj_width, dtype=torch.float32)
+        self.action_in_proj = EmbodimentSpecificLinear(self.max_action_dim, self.proj_width, num_categories=num_embodiments)
+        self.action_out_proj = EmbodimentSpecificLinear(self.proj_width, self.max_action_dim, num_categories=num_embodiments)
+        self.time_mlp_in = nn.Linear(self.proj_width, self.proj_width)
+        self.time_mlp_out = nn.Linear(self.proj_width, self.proj_width)
 
         self.enable_next_token_prediction = enable_next_token_prediction
         self.enable_learnable_traj_token = enable_learnable_traj_token
@@ -73,7 +73,7 @@ class GigaBrain0Policy(ModelMixin, ConfigMixin):
             self.traj_hidden_dim = traj_hidden_dim
             self.traj_token = nn.Parameter(torch.randn(num_traj_tokens, self.vlm_hidden_size), requires_grad=True)
             self.traj_decoder = nn.GRU(input_size=self.vlm_hidden_size, hidden_size=self.traj_hidden_dim, batch_first=True)
-            self.traj_out_proj = nn.Linear(self.traj_hidden_dim, self.max_traj_dim, dtype=torch.float32)
+            self.traj_out_proj = nn.Linear(self.traj_hidden_dim, self.max_traj_dim)
 
     def forward(
         self,
@@ -362,12 +362,13 @@ class GigaBrain0Policy(ModelMixin, ConfigMixin):
 
         return embs, pad_masks, att_masks, adarms_cond
 
-    def sample_noise(self, shape: tuple, device: torch.device | str) -> Tensor:
+    def sample_noise(self, shape: tuple, device: torch.device | str, dtype: torch.dtype = torch.float32) -> Tensor:
         """Samples noise from a standard normal distribution.
 
         Args:
             shape: The desired shape of the noise tensor.
             device: The device to create the tensor on.
+            dtype: The dtype of the noise tensor.
 
         Returns:
             A tensor of the given shape filled with noise.
@@ -376,7 +377,7 @@ class GigaBrain0Policy(ModelMixin, ConfigMixin):
             mean=0.0,
             std=1.0,
             size=shape,
-            dtype=torch.float32,
+            dtype=dtype,
             device=device,
         )
         return noise
@@ -413,10 +414,11 @@ class GigaBrain0Policy(ModelMixin, ConfigMixin):
         """
         bsize = images[0].shape[0]
         device = images[0].device
+        model_dtype = images[0].dtype
 
         if noise is None:
             actions_shape = (bsize, self.n_action_steps, self.max_action_dim)
-            noise = self.sample_noise(actions_shape, device)
+            noise = self.sample_noise(actions_shape, device, dtype=model_dtype)
 
         prefix_embs, prefix_pad_masks, prefix_att_masks, _, traj_token_start_idx = self.embed_prefix(images, img_masks, lang_tokens, lang_masks)
         prefix_att_2d_masks = make_att_2d_masks(prefix_pad_masks, prefix_att_masks)
@@ -441,7 +443,7 @@ class GigaBrain0Policy(ModelMixin, ConfigMixin):
 
         x_t = noise
         dt = -1.0 / self.num_steps
-        timesteps = torch.arange(1.0, -dt / 2, dt, dtype=torch.float32, device=device)
+        timesteps = torch.arange(1.0, -dt / 2, dt, dtype=model_dtype, device=device)
         for timestep in timesteps:
             v_t = self.denoise_step(
                 prefix_pad_masks,
@@ -622,11 +624,11 @@ class EmbodimentSpecificLinear(nn.Module):
     """A linear layer with weights and biases specific to an embodiment
     category."""
 
-    def __init__(self, input_dim: int, output_dim: int, num_categories: int = 1, dtype: torch.dtype = torch.float32):
+    def __init__(self, input_dim: int, output_dim: int, num_categories: int = 1):
         super().__init__()
         self.num_categories = num_categories
-        self.weight = nn.Parameter(torch.empty(num_categories, input_dim, output_dim, dtype=dtype))
-        self.bias = nn.Parameter(torch.empty(num_categories, output_dim, dtype=dtype))
+        self.weight = nn.Parameter(torch.empty(num_categories, input_dim, output_dim))
+        self.bias = nn.Parameter(torch.empty(num_categories, output_dim))
 
         # Initialize using Linear's default initialization: U(-k, k) where k = 1/sqrt(in_features)
         k = 1.0 / math.sqrt(input_dim)

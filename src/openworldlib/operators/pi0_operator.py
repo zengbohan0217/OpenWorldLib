@@ -1,6 +1,8 @@
 import torch
 import torch.nn.functional as F
 from transformers import AutoTokenizer
+from PIL import Image as PILImage
+from torchvision.transforms import functional as TF
 
 from .base_operator import BaseOperator
 
@@ -204,7 +206,7 @@ class AlohaInputs:
         """Inverse-encode actions (n_steps, action_dim) from Aloha to pi0 format."""
         if self.adapt_to_pi:
             action_dim = actions.shape[-1]
-            if action_dim >= 14:
+            if (action_dim >= 14):
                 actions[:, :14] = self.joint_flip_mask * actions[:, :14]
                 actions[:, [6, 13]] = self._gripper_from_angular_inv(actions[:, [6, 13]])
             else:
@@ -426,8 +428,8 @@ class ImageTransform:
         self.width, self.height = resize_imgs_with_padding
 
     def __call__(self, data: dict) -> tuple[list[torch.Tensor], list[torch.Tensor]]:
-        """Preprocesses input images: optionally scales and pads to a fixed size,
-        then maps the pixel range from [0,1] to [-1,1]."""
+        """Preprocesses input images: accepts str path or PIL.Image, converts to tensor,
+        optionally scales and pads to a fixed size, then maps pixel range from [0,1] to [-1,1]."""
         images = []
         img_masks = []
 
@@ -436,6 +438,13 @@ class ImageTransform:
                 raise ValueError(f'{key} not found in data. Please check the present_img_keys in the config or the dataset.')
 
             img = data[key]
+            # Load from file path if a string is given
+            if isinstance(img, str):
+                img = PILImage.open(img).convert('RGB')
+            # Convert PIL.Image to (C, H, W) float32 tensor in [0, 1]
+            if isinstance(img, PILImage.Image):
+                img = TF.to_tensor(img.convert('RGB'))
+
             if self.resize_imgs_with_padding is not None:
                 original_height, original_width = img.shape[1:]
                 target_height, target_width = self.resize_imgs_with_padding
@@ -632,16 +641,12 @@ class PI0Operator(BaseOperator):
     # ------------------------------------------------------------------
     # Input processing
     # ------------------------------------------------------------------
-    def process_perception(self, images: dict[str, torch.Tensor], state: torch.Tensor, pad_state: bool = True):
+    def process_perception(self, images: dict[str, str | PILImage.Image], state: torch.Tensor, pad_state: bool = True):
         """Process images and state for model input.
 
-        Data flow:
-          1. Robot-specific input transform (e.g. Aloha joint flip)
-          2. State normalization
-          3. Image preprocessing
-          4. State padding to model dim
+        Args:
+            images: dict mapping image key -> file path (str) or PIL.Image.
         """
-        images = {k: v.to(self.device) for k, v in images.items()}
         state = state.to(self.device)
 
         # 1. Robot-specific input transform
@@ -650,8 +655,10 @@ class PI0Operator(BaseOperator):
         # 2. Normalize state
         state = self.state_normalize_transform(state)
 
-        # 3. Process images
+        # 3. Process images, then move to device
         images, img_masks = self.image_transform(images)
+        images = [img.to(self.device) for img in images]
+        img_masks = [mask.to(self.device) for mask in img_masks]
 
         # 4. Pad state
         if pad_state:

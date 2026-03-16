@@ -1,4 +1,3 @@
-
 from typing import List, Optional, Union
 
 import torch
@@ -16,36 +15,39 @@ class SpatialLadderReasoning(BaseReasoning):
         self,
         model: Qwen2_5_VLForConditionalGeneration,
         processor: AutoProcessor,
-        device: Optional[Union[str, torch.device]] = None,
+        device: Union[str, torch.device] = "cuda",
     ):
         super().__init__()
         self.model = model
         self.processor = processor
-        self.device = torch.device(device) if device is not None else self._get_default_device()
+        self.device = torch.device(device)
 
     @classmethod
     def from_pretrained(
         cls,
-        pretrained_model_path: str = "hongxingli/SpatialLadder-3B",
-        device: Optional[Union[str, torch.device]] = None,
-        torch_dtype: torch.dtype = torch.bfloat16,
+        model_path: str = "hongxingli/SpatialLadder-3B",
+        device: Union[str, torch.device] = "cuda",
+        weight_dtype: torch.dtype = torch.bfloat16,
         attn_implementation: Optional[str] = None,
-        device_map: Union[str, dict] = "auto",
         **kwargs,
-    ) -> "SpatialLadder":
+    ) -> "SpatialLadderReasoning":
         """
         Load SpatialLadder model and processor.
 
-        Extra kwargs are forwarded to transformers.from_pretrained.
+        Args:
+            model_path: HuggingFace model ID or local path to the model.
+            device: Target device to load the model onto (e.g. "cuda", "cuda:0", "cpu"). Defaults to "cuda".
+            weight_dtype: Weight dtype for the model (e.g. torch.bfloat16, torch.float16). Defaults to torch.bfloat16.
+            attn_implementation: Attention implementation override.
         """
         model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
-            pretrained_model_path,
-            torch_dtype=torch_dtype,
+            model_path,
+            torch_dtype=weight_dtype,
             attn_implementation=attn_implementation,
-            device_map=device_map,
             **kwargs,
         )
-        processor = AutoProcessor.from_pretrained(pretrained_model_path)
+        model = model.to(device)
+        processor = AutoProcessor.from_pretrained(model_path)
         return cls(model=model, processor=processor, device=device)
 
     def api_init(self, api_key, endpoint):
@@ -53,9 +55,6 @@ class SpatialLadderReasoning(BaseReasoning):
         raise NotImplementedError("API init is not supported for SpatialLadder.")
 
     def _get_default_device(self) -> torch.device:
-        # Prefer model's device when device_map is set, otherwise fall back to CUDA/CPU.
-        if hasattr(self.model, "device"):
-            return self.model.device
         if torch.cuda.is_available():
             return torch.device("cuda")
         return torch.device("cpu")

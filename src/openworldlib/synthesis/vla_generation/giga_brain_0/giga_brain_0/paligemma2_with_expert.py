@@ -96,8 +96,9 @@ class SiglipVisionTransformer(nn.Module):
         output_hidden_states = output_hidden_states if output_hidden_states is not None else self.config.output_hidden_states
 
         hidden_states = self.embeddings(pixel_values, interpolate_pos_encoding=interpolate_pos_encoding)
-        hidden_states = hidden_states.to(dtype=torch.bfloat16)
-        with torch.autocast(device_type='cuda', dtype=torch.bfloat16):
+        model_dtype = pixel_values.dtype
+        hidden_states = hidden_states.to(dtype=model_dtype)
+        with torch.autocast(device_type='cuda', dtype=model_dtype):
             encoder_outputs: BaseModelOutput = self.encoder(
                 inputs_embeds=hidden_states,
                 output_attentions=output_attentions,
@@ -721,6 +722,9 @@ class PaliGemma2WithExpertModel(nn.Module):
         """Encode images with SigLIP and project to hidden size."""
         image_outputs = self.vision_tower(image)
         selected_image_feature = image_outputs.last_hidden_state
+        # Explicitly cast to projector weight dtype to avoid float32/bfloat16 mismatch
+        # under torch.compile where autocast is not guaranteed to convert SigLIP outputs.
+        selected_image_feature = selected_image_feature.to(dtype=self.multi_modal_projector.linear.weight.dtype)
         image_features = self.multi_modal_projector(selected_image_feature)
         return image_features
 
@@ -759,9 +763,17 @@ class PaliGemma2WithExpertModel(nn.Module):
             inputs_embeds = [None, None]
         if adarms_cond is None:
             adarms_cond = [None, None]
-        inputs_embeds = [input_embed.to(dtype=torch.bfloat16) if input_embed is not None else None for input_embed in inputs_embeds]
 
-        with torch.autocast(device_type='cuda', dtype=torch.bfloat16):
+        # Infer dtype from the first non-None embed; fall back to bfloat16.
+        # Avoid next(..., default) which is not supported by torch.compile's Dynamo tracer.
+        model_dtype = torch.bfloat16
+        for _e in inputs_embeds:
+            if _e is not None:
+                model_dtype = _e.dtype
+                break
+        inputs_embeds = [e.to(dtype=model_dtype) if e is not None else None for e in inputs_embeds]
+
+        with torch.autocast(device_type='cuda', dtype=model_dtype):
             if use_cache and past_key_values is None:
                 past_key_values = {}
 
