@@ -27,7 +27,7 @@ print(f"Input: {DATA_PATH}")
 print(f"Views: {result.camera_range['num_views']}")
 print(f"Camera range: {result.camera_range}")
 
-rendered = pipeline(task_type="render_view", view_index=0)
+rendered = pipeline(task_type="render_view", camera_view=0)
 rendered.save(os.path.join(OUTPUT_DIR, "render_default.png"))
 
 interact_frames = pipeline(task_type="render_view", interactions=["forward", "left", "camera_r"])

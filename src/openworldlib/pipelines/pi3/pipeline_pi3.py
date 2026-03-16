@@ -348,16 +348,17 @@ class Pi3Pipeline:
     def render_view(
         self,
         result: Optional["Pi3Result"] = None,
-        view_index: Optional[int] = None,
+        camera_view=None,
         camera_to_world: Optional[np.ndarray] = None,
-        camera_view: Optional[List[float]] = None,
     ) -> Image.Image:
         """Render a view from cached point cloud (no model inference).
 
-        Specify one of:
-          - view_index: index into result.camera_params
-          - camera_to_world: explicit 4x4 matrix
-          - camera_view: [dx,dy,dz,theta_x,theta_z] delta from default camera
+        Args:
+            camera_view: Supports multiple formats:
+                - int: index into result.camera_params (e.g., 0, 1, 2)
+                - list of 5 floats: [dx,dy,dz,theta_x,theta_z] delta from default camera
+                - None: use the default (first) camera
+            camera_to_world: explicit 4x4 matrix (overrides camera_view if provided)
         """
         res = result or self._cached_result
         if res is None:
@@ -377,9 +378,9 @@ class Pi3Pipeline:
 
         if camera_to_world is not None:
             c2w = np.array(camera_to_world, dtype=np.float64)
-        elif view_index is not None:
-            c2w = np.array(res.camera_params[view_index]["camera_to_world"], dtype=np.float64)
-        elif camera_view is not None:
+        elif isinstance(camera_view, int):
+            c2w = np.array(res.camera_params[camera_view]["camera_to_world"], dtype=np.float64)
+        elif isinstance(camera_view, (list, tuple)):
             base = np.array(res.camera_params[0]["camera_to_world"], dtype=np.float64)
             c2w = _apply_camera_delta(base, camera_view)
         else:
@@ -425,12 +426,11 @@ class Pi3Pipeline:
         video_path: Optional[str] = None,
         task_type: str = "reconstruction",
         interactions: Optional[List[str]] = None,
-        camera_view: Optional[List[float]] = None,
-        view_index: Optional[int] = None,
+        camera_view=None,
         visualize_ops: bool = True,
         **kwargs,
     ):
-        """Unified call interface.
+        """Unified call interface. Behavior is determined by task_type.
 
         Args:
             images: Image input path/list/tensor/array.
@@ -439,21 +439,17 @@ class Pi3Pipeline:
             video_path: Alias for a single video path.
             task_type: One of "reconstruction", "render_view", "render_trajectory".
             interactions: Navigation signals like ["forward", "left", "camera_r"].
-                When provided with task_type="render_view", applies interactions
-                then renders the resulting viewpoint.
-            camera_view: [dx,dy,dz,theta_x,theta_z] camera delta for render_view.
-            view_index: Camera index for render_view.
+                When provided with task_type="render_view", generates a video
+                with smooth transitions between each interaction.
+            camera_view: Supports int (view index) or list [dx,dy,dz,theta_x,theta_z].
             visualize_ops: Whether to generate visualizations.
 
         Returns:
             - task_type="reconstruction": Pi3Result
-            - task_type="render_view": PIL.Image
+            - task_type="render_view": PIL.Image or List[PIL.Image] (when interactions given)
             - task_type="render_trajectory": List[PIL.Image]
         """
         visual_input = videos or video_path or images or image_path
-
-        if task_type == "reconstruction" and visual_input is None and interactions is not None:
-            task_type = "render_view"
 
         if task_type == "reconstruction":
             if visual_input is None:
@@ -486,9 +482,7 @@ class Pi3Pipeline:
                 for _ in range(n_hold):
                     frames.append(hold_img)
                 return frames
-            return self.render_view(
-                view_index=view_index, camera_view=camera_view, **kwargs,
-            )
+            return self.render_view(camera_view=camera_view, **kwargs)
 
         elif task_type == "render_trajectory":
             return self._render_trajectory(**kwargs)
