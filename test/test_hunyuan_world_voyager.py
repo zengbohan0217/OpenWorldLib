@@ -4,7 +4,7 @@ from PIL import Image
 from openworldlib.pipelines.hunyuan_world.pipeline_hunyuan_world_voyager import HunyuanWorldVoyagerPipeline
 
 
-image_path = "./data/test_case1/ref_image.png"
+image_path = "./data/test_case/test_image_case1/ref_image.png"
 moge_model_path = "Ruicheng/moge-vitl"
 hunyuan_world_voyager_model_path = "tencent/HunyuanWorld-Voyager"
 

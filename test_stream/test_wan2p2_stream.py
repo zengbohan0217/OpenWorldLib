@@ -24,7 +24,7 @@ pipeline.memory_module.manage(action="reset")
 
 # 可选：如果需要初始图片，可以在这里设置
 # 如果不设置或设置为 None，第一次调用将进行纯文本生成（t2v）
-initial_image_path: Optional[str] = "./data/test_case1/ref_image.png" # "path to image"
+initial_image_path: Optional[str] = "./data/test_case/test_image_case1/ref_image.png" # "path to image"
 if initial_image_path:
     last_frame_img = Image.open(initial_image_path).convert('RGB')
 else:

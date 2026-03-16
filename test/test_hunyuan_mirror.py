@@ -2,7 +2,7 @@ import os
 from openworldlib.pipelines.hunyuan_world.pipeline_hunyuan_mirror import HunyuanMirrorPipeline
 
 # set input and output paths
-input_path = "data/test_case/test_image_seq_case1"
+input_path = "./data/test_case/test_image_seq_case1"
 output_path = "output/hunyuan_mirror_mirror"
 
 image_extensions = ['.jpg', '.jpeg', '.png', '.webp']

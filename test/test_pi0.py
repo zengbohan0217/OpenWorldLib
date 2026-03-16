@@ -20,7 +20,7 @@ DEVICE    = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 CONFIGS = {
     'aloha': dict(
         model_path       = 'lerobot/pi0_base',
-        norm_stats_path  = 'data/test_vla/aloha/pi0_norm_stats.json',
+        norm_stats_path  = './data/test_case/test_vla_case1/aloha/pi0_norm_stats.json',
         robot_type       = 'aloha',
         action_dim       = 14,
         out_path         = 'outputs/pi0_aloha_demo.png',
@@ -28,27 +28,27 @@ CONFIGS = {
                             'observation.images.cam_left_wrist',
                             'observation.images.cam_right_wrist'],
         img_files        = {
-            'observation.images.cam_high':        'data/test_vla/aloha/observation_images_cam_high.png',
-            'observation.images.cam_left_wrist':  'data/test_vla/aloha/observation_images_cam_left_wrist.png',
-            'observation.images.cam_right_wrist': 'data/test_vla/aloha/observation_images_cam_right_wrist.png',
+            'observation.images.cam_high':        './data/test_case/test_vla_case1/aloha/observation_images_cam_high.png',
+            'observation.images.cam_left_wrist':  './data/test_case/test_vla_case1/aloha/observation_images_cam_left_wrist.png',
+            'observation.images.cam_right_wrist': './data/test_case/test_vla_case1/aloha/observation_images_cam_right_wrist.png',
         },
     ),
     'libero': dict(
         model_path       = 'lerobot/pi0_base',
-        norm_stats_path  = 'data/test_vla/libero/pi0_norm_stats.json',
+        norm_stats_path  = './data/test_case/test_vla_case1/libero/pi0_norm_stats.json',
         robot_type       = 'libero',
         action_dim       = 7,
         out_path         = 'outputs/pi0_libero_demo.png',
         img_keys         = ['observation.images.cam_high',
                             'observation.images.cam_left_wrist'],
         img_files        = {
-            'observation.images.cam_high':       'data/test_vla/libero/main_view.png',
-            'observation.images.cam_left_wrist': 'data/test_vla/libero/wrist_view.png',
+            'observation.images.cam_high':       './data/test_case/test_vla_case1/libero/main_view.png',
+            'observation.images.cam_left_wrist': './data/test_case/test_vla_case1/libero/wrist_view.png',
         },
     ),
     'droid': dict(
         model_path       = 'lerobot/pi0_base',
-        norm_stats_path  = 'data/test_vla/droid/pi0_norm_states_droid_joint.json',
+        norm_stats_path  = './data/test_case/test_vla_case1/droid/pi0_norm_states_droid_joint.json',
         robot_type       = 'droid',
         action_dim       = 8,
         out_path         = 'outputs/pi0_droid_demo.png',
@@ -56,9 +56,9 @@ CONFIGS = {
                             'observation.images.cam_left_wrist',
                             'observation.images.cam_right_wrist'],
         img_files        = {
-            'observation.images.cam_high':        'data/test_vla/droid/exterior_image_1_left.png',
-            'observation.images.cam_left_wrist':  'data/test_vla/droid/wrist_image_left.png',
-            'observation.images.cam_right_wrist': 'data/test_vla/droid/exterior_image_2_left.png',
+            'observation.images.cam_high':        './data/test_case/test_vla_case1/droid/exterior_image_1_left.png',
+            'observation.images.cam_left_wrist':  './data/test_case/test_vla_case1/droid/wrist_image_left.png',
+            'observation.images.cam_right_wrist': './data/test_case/test_vla_case1/droid/exterior_image_2_left.png',
         },
     ),
 }
@@ -66,13 +66,13 @@ CONFIGS = {
 
 def load_data(name):
     if name == 'aloha':
-        d = json.load(open('data/test_vla/aloha/state.json'))
+        d = json.load(open('./data/test_case/test_vla_case1/aloha/state.json'))
         return torch.tensor(d['observation.state'], dtype=torch.float32), 'perform the task'
     if name == 'libero':
-        d = json.load(open('data/test_vla/libero/meta.json'))
+        d = json.load(open('./data/test_case/test_vla_case1/libero/meta.json'))
         return torch.tensor(d['observation']['state'], dtype=torch.float32), d['task']
     if name == 'droid':
-        d = json.load(open('data/test_vla/droid/step_data.json'))
+        d = json.load(open('./data/test_case/test_vla_case1/droid/step_data.json'))
         state = torch.tensor(d['observation_numeric']['joint_position'] +
                              d['observation_numeric']['gripper_position'], dtype=torch.float32)
         return state, d['language_instruction']

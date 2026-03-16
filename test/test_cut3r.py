@@ -6,7 +6,7 @@ sys.path.append("..")
 from openworldlib.pipelines.cut3r.pipeline_cut3r import CUT3RPipeline
 
 
-DATA_PATH = "../data/test_case/test_image_seq_case1"
+DATA_PATH = "./data/test_case/test_image_seq_case1"
 MODEL_NAME = "cut3r_224_linear_4"  # or "cut3r_512_dpt_4_64"
 
 SIZE = 224

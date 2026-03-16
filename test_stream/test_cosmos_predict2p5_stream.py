@@ -50,7 +50,7 @@ default_prompt = (
     "throughout the video. The final frame captures the robotic arm with the pitcher finishing the pour, with the "
     "glass now filled to a higher level, while the pitcher is slightly tilted but still held securely by the gripper."
 )
-default_image_path = "data/test_case2/robot_arm.png"
+default_image_path = "./data/test_case/test_vla_image_case1/init_frame.png"
 user_prompt = input(
     f"Please input prompt (press Enter to use default)\n"
     f"Default: {default_prompt}\n> "

@@ -49,7 +49,7 @@ prompt = (
     "throughout the video. The final frame captures the robotic arm with the pitcher finishing the pour, with the "
     "glass now filled to a higher level, while the pitcher is slightly tilted but still held securely by the gripper."
 )
-image_path = "./data/test_vla_image_case1/init_frame.png"
+image_path = "./data/test_case/test_vla_image_case1/init_frame.png"
 save_path = "cosmos_predict2p5_demo.mp4"
 
 output_video = pipeline(

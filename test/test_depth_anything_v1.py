@@ -8,7 +8,7 @@ from openworldlib.pipelines.depth_anything.pipeline_depth_anything_v1 import (
 
 # Configure before running
 DATA_TYPE = "image"  # or "video"
-DATA_PATH = "../data/test_case1"
+DATA_PATH = "./data/test_case/test_image_case1/ref_image.png"
 MODEL_PATH = "LiheYoung/depth_anything_vitl14"
 
 ENCODER = "vitl"  # 'vits', 'vitb', or 'vitl'

@@ -21,7 +21,7 @@ DEVICE    = 'cuda:0' if torch.cuda.is_available() else 'cpu'
 CONFIGS = {
     'libero': dict(
         model_path       = 'lerobot/pi05_base',
-        norm_stats_path  = 'data/test_vla/libero/pi0_5_norm_stats.json',
+        norm_stats_path  = './data/test_case/test_vla_case1/libero/pi0_5_norm_stats.json',
         robot_type       = 'libero',
         action_dim       = 7,
         use_delta_actions= False,
@@ -29,13 +29,13 @@ CONFIGS = {
         img_keys         = ['observation.images.cam_high',
                             'observation.images.cam_left_wrist'],
         img_files        = {
-            'observation.images.cam_high':       Image.open('data/test_vla/libero/main_view.png').convert('RGB'),
-            'observation.images.cam_left_wrist': Image.open('data/test_vla/libero/wrist_view.png').convert('RGB'),
+            'observation.images.cam_high':       Image.open('./data/test_case/test_vla_case1/libero/main_view.png').convert('RGB'),
+            'observation.images.cam_left_wrist': Image.open('./data/test_case/test_vla_case1/libero/wrist_view.png').convert('RGB'),
         },
     ),
     'droid': dict(
         model_path       = 'lerobot/pi05_base',  # replace with pi05_droid checkpoint in practice
-        norm_stats_path  = 'data/test_vla/droid/pi05_norm_states_droid_joint.json',
+        norm_stats_path  = './data/test_case/test_vla_case1/droid/pi05_norm_states_droid_joint.json',
         robot_type       = 'droid',
         action_dim       = 8,
         use_delta_actions= True,
@@ -44,9 +44,9 @@ CONFIGS = {
                             'observation.images.cam_left_wrist',
                             'observation.images.cam_right_wrist'],
         img_files        = {
-            'observation.images.cam_high':        Image.open('data/test_vla/droid/exterior_image_1_left.png').convert('RGB'),
-            'observation.images.cam_left_wrist':  Image.open('data/test_vla/droid/wrist_image_left.png').convert('RGB'),
-            'observation.images.cam_right_wrist': Image.open('data/test_vla/droid/exterior_image_2_left.png').convert('RGB'),
+            'observation.images.cam_high':        Image.open('./data/test_case/test_vla_case1/droid/exterior_image_1_left.png').convert('RGB'),
+            'observation.images.cam_left_wrist':  Image.open('./data/test_case/test_vla_case1/droid/wrist_image_left.png').convert('RGB'),
+            'observation.images.cam_right_wrist': Image.open('./data/test_case/test_vla_case1/droid/exterior_image_2_left.png').convert('RGB'),
         },
     ),
 }
@@ -54,10 +54,10 @@ CONFIGS = {
 
 def load_data(name):
     if name == 'libero':
-        d = json.load(open('data/test_vla/libero/meta.json'))
+        d = json.load(open('./data/test_case/test_vla_case1/libero/meta.json'))
         return torch.tensor(d['observation']['state'], dtype=torch.float32), d['task']
     if name == 'droid':
-        d = json.load(open('data/test_vla/droid/step_data.json'))
+        d = json.load(open('./data/test_case/test_vla_case1/droid/step_data.json'))
         state = torch.tensor(d['observation_numeric']['joint_position'] +
                              d['observation_numeric']['gripper_position'], dtype=torch.float32)
         return state, d['language_instruction']

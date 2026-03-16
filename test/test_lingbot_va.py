@@ -13,7 +13,7 @@ from openworldlib.pipelines.lingbot_va.pipeline_lingbot_va import LingBotVAPipel
 
 
 MODEL_PATH = 'robbyant/lingbot-va-posttrain-robotwin'
-IMAGE_DIR = 'data/test_vla/aloha'
+IMAGE_DIR = './data/test_case/test_vla_case1/aloha'
 OUTPUT_PATH = 'outputs/lingbot_va_demo.png'
 VIDEO_OUTPUT_PATH = 'outputs/lingbot_va_demo.mp4'
 PROMPT = 'Grab the medium-sized white mug, rotate it, place it on the table, and hook it onto the smooth dark gray rack.'
@@ -58,7 +58,7 @@ def visualize_action(pred_action: np.ndarray, out_path: str, action_names: list[
 
 if __name__ == '__main__':
     # Load norm stats from file
-    norm_stats_path = 'data/test_vla/lingbot_va_norm_stats.json'
+    norm_stats_path = './data/test_case/test_vla_case1/lingbot_va_norm_stats.json'
     with open(norm_stats_path, 'r') as f:
         norm_stat = json.load(f)
 

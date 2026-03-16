@@ -7,7 +7,7 @@ from openworldlib.pipelines.lingbot_world.pipeline_lingbot_world import LingBotP
 from openworldlib.synthesis.visual_generation.lingbot.lingbot_world.distributed.util import init_distributed_group
 
 
-image_path = "./data/test_case1/ref_image.png"
+image_path = "./data/test_case/test_image_case1/ref_image.png"
 pretrained_model_path = "robbyant/lingbot-world-base-cam"
 input_image = Image.open(image_path).convert("RGB")
 prompt = "A charming medieval village with cobblestone streets, thatched-roof houses."

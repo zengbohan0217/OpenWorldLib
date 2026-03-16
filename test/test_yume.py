@@ -9,7 +9,7 @@ from openworldlib.pipelines.yume.pipeline_yume import YumePipeline
 
 pretrained_model_path = "stdstu123/Yume-I2V-540P"
 prompt = "A fire-breathing dragon appeared." # needed for t2v
-image_path = "./data/test_case1/ref_image.png"  # needed for i2v, set None for t2v or v2v
+image_path = "./data/test_case/test_image_case1/ref_image.png"  # needed for i2v, set None for t2v or v2v
 video_path = None # needed for v2v, set None for t2v or i2v
 interactions = ["forward", "camera_l"]  # list, e.g., ["forward", "camera_l", "forward", "camera_r"]
 interaction_speeds=[100, 4] # camera movement speed: xxx meters per second; camera rotation speed: xxx

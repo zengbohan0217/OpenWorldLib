@@ -7,8 +7,8 @@ MODEL_PATH = "ccvl/SpatialReasoner"
 DEVICE = "cuda"
 WEIGHT_DTYPE = torch.bfloat16
 
-IMAGE_PATH = "./data/test_case1/ref_image.png"
-VIDEO_PATH = "./data/test_video_case1/talking_man.mp4"
+IMAGE_PATH = "./data/test_case/test_image_case1/ref_image.png"
+VIDEO_PATH = "./data/test_case/test_video_case1/talking_man.mp4"
 
 
 def load_video_frames(video_path: str, max_frames: int = 8):

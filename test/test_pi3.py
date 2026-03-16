@@ -9,7 +9,7 @@ from openworldlib.pipelines.pi3.pipeline_pi3 import Pi3Pipeline
 
 MODE = "pi3x"  # or "pi3"
 MODEL_PATH = {"pi3x": "yyfz233/Pi3X", "pi3": "yyfz233/Pi3"}[MODE]
-IMAGE_INPUT = "../data/test_case1/ref_image.png"
+IMAGE_INPUT = "./data/test_case/test_image_case1/ref_image.png"
 VIDEO_INPUT = None
 OUTPUT_DIR = "output_pi3"
 

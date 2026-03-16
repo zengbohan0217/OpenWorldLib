@@ -11,7 +11,7 @@ from openworldlib.pipelines.lingbot_world.pipeline_lingbot_world import LingBotP
 from openworldlib.synthesis.visual_generation.lingbot.lingbot_world.distributed.util import init_distributed_group
 
 # === Configuration ===
-IMAGE_PATH = "./data/test_case1/ref_image.png"
+IMAGE_PATH = "./data/test_case/test_image_case1/ref_image.png"
 PRETRAINED_MODEL_PATH = "robbyant/lingbot-world-base-cam"
 DEFAULT_PROMPT = "A charming medieval village with cobblestone streets, thatched-roof houses."
 RESIZE_H = 480

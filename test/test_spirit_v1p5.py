@@ -8,8 +8,8 @@ from openworldlib.pipelines.spirit_ai.pipeline_spirit_v1p5 import SpiritV1p5Pipe
 
 def main():
     ckpt_path = "Spirit-AI-robotics/Spirit-v1.5"
-    norm_stats_path = "./data/test_vla/norm_stats.json"
-    meta_path = "./data/test_vla/meta.json"
+    norm_stats_path = "./data/test_case/test_vla_case1/norm_stats.json"
+    meta_path = "./data/test_case/test_vla_case1/libero/meta.json"
 
     pipeline = SpiritV1p5Pipeline.from_pretrained(
         pretrained_model_path=ckpt_path,
