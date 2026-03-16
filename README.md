@@ -11,7 +11,7 @@
 
 [English](README.md) | [中文](README_zh.md)
 
-Extension repo：[[3D generation]](https://github.com/zengbohan0217/OpenWorldLib-extension-3D) | [[VLA]]() | [[simulator]]()
+Extension repo：[[3D generation]](https://github.com/zengbohan0217/OpenWorldLib-extension-3D) | [[VLA]](https://github.com/yfanDai/OpenWorldLib-extension-VLA) | [[simulator]](https://github.com/YF0224/OpenWorldLib-extension-Simulator)
 
 </div>
 
@@ -112,7 +112,7 @@ The main goals of OpenWorldLib include:
 - Integrating open-source world model research outcomes and systematically curating related papers for researchers' reference and use.
 
 #### Supported Tasks
-OpenWorldLib covers the following research directions related to **World Models**:
+OpenWorldLib covers the following research directions related to **World Models**, **We sincerely thank all the excellent methods included in this framework for their significant contributions to world model**:
 
 | Task Category | Sub-task | Representative Methods/Models |
 | :--- | :--- | :--- |

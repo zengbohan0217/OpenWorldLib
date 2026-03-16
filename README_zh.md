@@ -11,7 +11,7 @@
 
 [English](README.md) | [中文](README_zh.md)
 
-扩展仓库：[[三维生成]](https://github.com/zengbohan0217/OpenWorldLib-extension-3D) | [[VLA]]() | [[仿真环境]]()
+扩展仓库：[[三维生成]](https://github.com/zengbohan0217/OpenWorldLib-extension-3D) | [[VLA]](https://github.com/yfanDai/OpenWorldLib-extension-VLA) | [[仿真环境]](https://github.com/YF0224/OpenWorldLib-extension-Simulator)
 
 </div>
 
@@ -114,7 +114,7 @@ OpenWorldLib 的主要目标包括：
 - 整合开源世界模型研究成果，并系统性地整理相关论文，供研究者参考和使用。
 
 #### 支持的任务
-OpenWorldLib 涵盖以下与**世界模型**相关的研究方向：
+OpenWorldLib 涵盖以下与**世界模型**相关的研究方向，**我们衷心感谢所有纳入本框架的优秀方法，它们为世界模型研究做出了巨大贡献**：
 
 | 任务类别 | 子任务 | 代表性方法/模型 |
 | :--- | :--- | :--- |
