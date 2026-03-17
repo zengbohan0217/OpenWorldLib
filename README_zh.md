@@ -50,7 +50,7 @@
 <tr>
   <td align="center">
     <img src="https://github.com/user-attachments/assets/c4fa5245-e837-4e47-a4e4-585a61358f91" width="218" height="120"><br/>
-    <b>Wan-2.2</b>
+    <b>Wan-2.2-IT2V</b>
   </td>
   <td align="center">
     <img src="https://github.com/user-attachments/assets/a47b2e0e-b62c-45fb-bb99-6377f53e3f5e" width="218" height="120"><br/>
@@ -148,7 +148,7 @@ cd OpenWorldLib
 bash scripts/test_inference/test_nav_video_gen.sh matrix-game-2
 bash scripts/test_stream/test_nav_video_gen.sh matrix-game-2
 ```
-其他方法的运行脚本可在 `scripts/test_inference` 以及 `scripts/test_stream` 路径下进行查看
+其他方法的运行脚本可在 `scripts/test_inference` 以及 `scripts/test_stream` 路径下进行查看，目前我们主要使用 **80GB** 和 **141GB** 显存的显卡进行测试，后续我们会测试更多型号，并在 `./docs/installation.md` 文件中更新。
 
 
 ### 项目结构

@@ -49,7 +49,7 @@ Extension repo：[[3D generation]](https://github.com/zengbohan0217/OpenWorldLib
 <tr>
   <td align="center">
     <img src="https://github.com/user-attachments/assets/c4fa5245-e837-4e47-a4e4-585a61358f91" width="218" height="120"><br/>
-    <b>Wan-2.2</b>
+    <b>Wan-2.2-IT2V</b>
   </td>
   <td align="center">
     <img src="https://github.com/user-attachments/assets/a47b2e0e-b62c-45fb-bb99-6377f53e3f5e" width="218" height="120"><br/>
@@ -145,7 +145,7 @@ cd OpenWorldLib
 bash scripts/test_inference/test_nav_video_gen.sh matrix-game-2
 bash scripts/test_stream/test_nav_video_gen.sh matrix-game-2
 ```
-Scripts for other methods can be found under `scripts/test_inference` and `scripts/test_stream`.
+Scripts for other methods can be found under `scripts/test_inference` and `scripts/test_stream`. Currently, we are primarily using GPUs with **80GB** and **141GB** of VRAM for testing. In the future, we will test more models and provide updates in the `./docs/installation.md` file.
 
 ### Structure
 To help developers and users better understand OpenWorldLib, we provide details about our codebase. The framework structure is as follows:
