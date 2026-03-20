@@ -5,6 +5,7 @@
 <details>
 <summary><strong>1. Core Concepts & General World Models</strong></summary>
 
+- **Infinite-World** · [[Paper]](https://arxiv.org/abs/2602.02393) [[Code]](https://github.com/MeiGen-AI/Infinite-World)
 - **World-Simulator** · [[Paper]](https://arxiv.org/pdf/2503.04641) [[Code]](https://github.com/ALEEEHU/World-Simulator)
 - **Is Sora a World Simulator? A Comprehensive Survey on General World Models and Beyond** · [[Paper]](https://arxiv.org/pdf/2405.03520) [[Code]](https://github.com/GigaAI-research/General-World-Models-Survey)
 - **Understanding World or Predicting Future? A Comprehensive Survey of World Models** · [[Paper]](https://arxiv.org/abs/2411.14499) [[Code]](https://github.com/tsinghua-fib-lab/World-Model)
