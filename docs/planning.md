@@ -7,6 +7,7 @@ The representative methods currently being integrated are listed below. We warml
 
 | Method | Paper | Code Repository | Main Direction / Task |
 |---|---|---|---|
+| **Infinite-World** | [paper](https://arxiv.org/abs/2602.02393) | [code](https://github.com/MeiGen-AI/Infinite-World) | Long Navigation Video Generation |
 | **Solaris** | [paper](https://arxiv.org/pdf/2602.22208) | [code](https://github.com/solaris-wm/solaris) | Navigation Video Generation (multiplayer Minecraft world modeling) |
 | **Cambrian-S** | [paper](https://arxiv.org/pdf/2511.04670) | [code](https://github.com/cambrian-mllm/cambrian-s) | Spatial Reasoning |
 | **Ctrl-World** | [paper](https://arxiv.org/pdf/2510.10125) | [code](https://github.com/Robert-gyj/Ctrl-World) | VLA / Robot Manipulation (controllable generative world model) |
