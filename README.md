@@ -84,11 +84,12 @@ We warmly welcome researchers to share their views on this framework or thoughts
 
 
 ### Important Docs <!-- omit in toc -->
-The following three documents are essential to this project (click to navigate):
+The following four documents are essential to this project (click to navigate):
 
 - [docs/planning.md](docs/planning.md): This document tracks the short-term optimization goals and future development plans for OpenWorldLib.
 - [docs/awesome_world_models.md](docs/awesome_world_model.md): This document records cutting-edge research, related surveys, and open-source projects on world models.
 - [docs/installation.md](docs/installation.md): This document provides installation instructions for different methods in OpenWorldLib.
+- [Development Guide](https://wcny4qa9krto.feishu.cn/wiki/XtPJwf5XQipP7RkeVv0ckyWlnNd?from=from_copylink): This document provides a framework template for OpenWorldLib, intended to serve as a reference for code integration for developers in the world model community.
 
 
 ### Table of Contents <!-- omit in toc -->
@@ -154,31 +155,18 @@ OpenWorldLib
 ├─ assets
 ├─ data                                # Test data
 │  ├─ benchmarks
-│  │  └─ reasoning
 │  ├─ test_case
 │  └─ ...
 ├─ docs                                # Documentation
-├─ examples                            # Benchmark examples
+├─ examples                            # Benchmark evaluation code
 ├─ scripts                             # All key test scripts
 ├─ src
-│  └─ openworldlib                        # Main source path
-│     ├─ base_models                   # Base models
+│  └─ openworldlib                     # Main source path
+│     ├─ base_models                   # Base models, provide basic modules for other parts
 │     │  ├─ diffusion_model
-│     │  │  ├─ image
-│     │  │  ├─ video
-│     │  │  └─ ...
 │     │  ├─ llm_mllm_core
-│     │  │  ├─ llm
-│     │  │  ├─ mllm
-│     │  │  └─ ...
 │     │  ├─ perception_core
-│     │  │  ├─ detection
-│     │  │  ├─ general_perception
-│     │  │  └─ ...
 │     │  └─ three_dimensions
-│     │     ├─ depth
-│     │     ├─ general_3d
-│     │     └─ ...
 │     ├─ memories                      # Memory module
 │     │  ├─ reasoning
 │     │  └─ visual_synthesis
@@ -199,10 +187,28 @@ OpenWorldLib
 ├─ test                                # All test code
 ├─ test_stream                         # All interactive test code
 └─ tools                               # Utilities
-   ├─ installing
    └─ vibe_code
 ```
 When using OpenWorldLib, users typically call the **pipeline** class directly, which handles weight loading, environment initialization, and other tasks. Users interact with the **operator** class, and leverage the **synthesis**, **reasoning**, and **representation** classes for generation. In multi-turn interactions, the **memory** class is used to maintain the running context.
+```txt
+User Input
+    │
+    ▼
+┌─────────────┐
+│  Pipeline   │──── from_pretrained(): load models & initialize modules
+│             │
+│  __call__() │──┬── process() ──► Operator (validate & preprocess)
+│      │      │  │
+│      │      │  ├── ► Synthesis.predict()           → multimodel outputs
+│      │      │  ├── ► Reasoning.inference()         → text outputs
+│      │      │  └── ► Representation.get_repr..()   → 3D outputs
+│      │      │
+│  stream()   │──┬── memory.select()  → retrieve context
+│      │      │  ├── __call__()       → generate current turn
+│      │      │  └── memory.record()  → store results
+└─────────────┘
+```
+
 
 ### Planning
 

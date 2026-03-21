@@ -86,11 +86,12 @@
 
 
 ### 重要文档 <!-- omit in toc -->
-以下三份文档对本项目至关重要（点击可跳转）：
+以下四份文档对本项目至关重要（点击可跳转）：
 
 - [docs/planning.md](docs/planning.md)：该文档跟踪 OpenWorldLib 的短期优化目标和未来发展计划。
 - [docs/awesome_world_models.md](docs/awesome_world_model.md)：该文档记录了世界模型相关的前沿研究、综述论文和开源项目。
 - [docs/installation.md](docs/installation.md)：该文档提供了 OpenWorldLib 中不同方法的安装说明。
+- [开发流程指南](https://wcny4qa9krto.feishu.cn/wiki/XtPJwf5XQipP7RkeVv0ckyWlnNd?from=from_copylink): 该文档提供了 OpenWorldLib 的框架模板，旨在为世界模型社区的开发者提供代码合并的参考。
 
 
 ### 目录 <!-- omit in toc -->
@@ -158,31 +159,18 @@ OpenWorldLib
 ├─ assets
 ├─ data                                # 测试数据
 │  ├─ benchmarks
-│  │  └─ reasoning
 │  ├─ test_case
 │  └─ ...
 ├─ docs                                # 相关文档
 ├─ examples                            # 运行benchmark测例
 ├─ scripts                             # 所有关键测试脚本
 ├─ src
-│  └─ openworldlib                        # 主路径
-│     ├─ base_models                   # 基础模型
+│  └─ openworldlib                     # 主路径
+│     ├─ base_models                   # 基础模型，为其他部分提供基础模块
 │     │  ├─ diffusion_model
-│     │  │  ├─ image
-│     │  │  ├─ video
-│     │  │  └─ ...
 │     │  ├─ llm_mllm_core
-│     │  │  ├─ llm
-│     │  │  ├─ mllm
-│     │  │  └─ ...
 │     │  ├─ perception_core
-│     │  │  ├─ detection
-│     │  │  ├─ general_perception
-│     │  │  └─ ...
 │     │  └─ three_dimensions
-│     │     ├─ depth
-│     │     ├─ general_3d
-│     │     └─ ...
 │     ├─ memories                      # 记忆模块
 │     │  ├─ reasoning
 │     │  └─ visual_synthesis
@@ -203,10 +191,27 @@ OpenWorldLib
 ├─ test                                # 所有测试代码
 ├─ test_stream                         # 所有交互测试代码
 └─ tools                               # 相关工具
-   ├─ installing
    └─ vibe_code
 ```
 在使用 OpenWorldLib 时通常直接调用 **pipeline** 类，而 pipeline 类中，需要完成权重加载，环境初始化等任务，同时用户与 **operator** 类进行交互，并且利用 **synthesis**、**reasoning**、**representation** 等类完成生成。在多轮交互中，使用 **memory** 类对运行流程进行记忆。
+```txt
+User Input
+    │
+    ▼
+┌─────────────┐
+│  Pipeline   │──── from_pretrained(): load models & initialize modules
+│             │
+│  __call__() │──┬── process() ──► Operator (validate & preprocess)
+│      │      │  │
+│      │      │  ├── ► Synthesis.predict()           → multimodel outputs
+│      │      │  ├── ► Reasoning.inference()         → text outputs
+│      │      │  └── ► Representation.get_repr..()   → 3D outputs
+│      │      │
+│  stream()   │──┬── memory.select()  → retrieve context
+│      │      │  ├── __call__()       → generate current turn
+│      │      │  └── memory.record()  → store results
+└─────────────┘
+```
 
 
 ### 规划

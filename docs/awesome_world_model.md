@@ -5,7 +5,6 @@
 <details>
 <summary><strong>1. Core Concepts & General World Models</strong></summary>
 
-- **Infinite-World** · [[Paper]](https://arxiv.org/abs/2602.02393) [[Code]](https://github.com/MeiGen-AI/Infinite-World)
 - **World-Simulator** · [[Paper]](https://arxiv.org/pdf/2503.04641) [[Code]](https://github.com/ALEEEHU/World-Simulator)
 - **Is Sora a World Simulator? A Comprehensive Survey on General World Models and Beyond** · [[Paper]](https://arxiv.org/pdf/2405.03520) [[Code]](https://github.com/GigaAI-research/General-World-Models-Survey)
 - **Understanding World or Predicting Future? A Comprehensive Survey of World Models** · [[Paper]](https://arxiv.org/abs/2411.14499) [[Code]](https://github.com/tsinghua-fib-lab/World-Model)
@@ -147,6 +146,7 @@
 - **RealWonder** · [[Paper]](https://arxiv.org/pdf/2603.05449) [[Code]](https://github.com/liuwei283/RealWonder)
 - **emu3.5** · [[Paper]](https://arxiv.org/pdf/2510.26583) [[Code]](https://github.com/baaivision/Emu3.5)
 - **MakeAnything** · [[Paper]](https://arxiv.org/pdf/2502.01572) [[Code]](https://github.com/showlab/MakeAnything)
+- **WorldCam** · [[Paper]](https://arxiv.org/pdf/2603.16871) [[Code]](https://github.com/cvlab-kaist/WorldCam)
 </details>
 
 <details>
@@ -189,6 +189,7 @@
 - **NFD** · [[Paper]](https://arxiv.org/pdf/2506.01380) [[Code]](#)
 - **WorldCache** · [[Paper]](https://arxiv.org/pdf/2603.06331) [[Code]](https://github.com/FofGofx/WorldCache)
 - **Solaris** · [paper](https://arxiv.org/pdf/2602.22208) [code](https://github.com/solaris-wm/solaris)
+- **Infinite-World** · [[Paper]](https://arxiv.org/abs/2602.02393) [[Code]](https://github.com/MeiGen-AI/Infinite-World)
 </details>
 
 #### (long-term) video generation
@@ -313,6 +314,7 @@
 - **EchoWorld** · [[Paper]](https://arxiv.org/abs/2504.13065) [[Code]](https://github.com/LeapLabTHU/EchoWorld)
 - **LoGeR** · [[Paper]](https://arxiv.org/pdf/2603.03269) [[Code]](https://github.com/Junyi42/LoGeR)
 - **Utonia** · [[Paper]](https://arxiv.org/pdf/2603.03283) [[Code]](https://github.com/Pointcept/Utopia)
+- **inspatio-world** · [[Paper]](#) [[Code]](https://github.com/inspatio/inspatio-world)
 </details>
 
 #### 4D generation
@@ -342,6 +344,7 @@
 - **Genesis** · [[Paper]](#) [[Code]](https://github.com/Genesis-Embodied-AI/Genesis)
 - **Latticeworld** · [[Paper]](https://arxiv.org/pdf/2509.05263) [[Code]](#)
 - **Worldlab** · [[Paper]](#) [[Code]](https://github.com/Twynzen/worldlab.git)
+- **WorldGrow** · [[Paper]](https://arxiv.org/abs/2510.21682) [[Code]](https://github.com/world-grow/WorldGrow)
 </details>
 
 ---
@@ -366,6 +369,7 @@
 - **MemFlow** · [[Paper]](https://arxiv.org/pdf/2512.14699) [[Code]](https://github.com/KlingTeam/MemFlow)
 - **StoryMem** · [[Paper]](https://arxiv.org/pdf/2512.19539) [[Code]](https://github.com/Kevin-thu/StoryMem)
 - **DiT-Mem** · [[Paper]](https://arxiv.org/pdf/2511.19229) [[Code]](https://github.com/Thrcle421/DiT-Mem)
+- **MosaicMem** · [[Paper]](https://arxiv.org/pdf/2603.17117) [[Code]](#)
 </details>
 
 ---
@@ -407,6 +411,12 @@
 - **lingbot-va** · [[Paper]](https://arxiv.org/pdf/2601.21998) [[Code]](https://github.com/Robbyant/lingbot-va)
 - **WoW** · [[Paper]](https://arxiv.org/pdf/2509.22642) [[Code]](https://github.com/wow-world-model/wow-world-model)
 - **Cosmos** · [[Paper]](https://arxiv.org/pdf/2501.03575) [[Code]](https://github.com/nvidia-cosmos/cosmos-predict1)
+</details>
+
+<details>
+<summary><strong> embodied ai with 3D generation </strong></summary>
+
+- **PointWorld** · [[Paper]](https://arxiv.org/pdf/2601.03782) [[Code]](https://github.com/NVlabs/PointWorld)
 </details>
 
 #### auto-driving
