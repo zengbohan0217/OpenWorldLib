@@ -155,31 +155,18 @@ OpenWorldLib
 ├─ assets
 ├─ data                                # Test data
 │  ├─ benchmarks
-│  │  └─ reasoning
 │  ├─ test_case
 │  └─ ...
 ├─ docs                                # Documentation
-├─ examples                            # Benchmark examples
+├─ examples                            # Benchmark evaluation code
 ├─ scripts                             # All key test scripts
 ├─ src
-│  └─ openworldlib                        # Main source path
-│     ├─ base_models                   # Base models
+│  └─ openworldlib                     # Main source path
+│     ├─ base_models                   # Base models, provide basic modules for other parts
 │     │  ├─ diffusion_model
-│     │  │  ├─ image
-│     │  │  ├─ video
-│     │  │  └─ ...
 │     │  ├─ llm_mllm_core
-│     │  │  ├─ llm
-│     │  │  ├─ mllm
-│     │  │  └─ ...
 │     │  ├─ perception_core
-│     │  │  ├─ detection
-│     │  │  ├─ general_perception
-│     │  │  └─ ...
 │     │  └─ three_dimensions
-│     │     ├─ depth
-│     │     ├─ general_3d
-│     │     └─ ...
 │     ├─ memories                      # Memory module
 │     │  ├─ reasoning
 │     │  └─ visual_synthesis
@@ -200,10 +187,28 @@ OpenWorldLib
 ├─ test                                # All test code
 ├─ test_stream                         # All interactive test code
 └─ tools                               # Utilities
-   ├─ installing
    └─ vibe_code
 ```
 When using OpenWorldLib, users typically call the **pipeline** class directly, which handles weight loading, environment initialization, and other tasks. Users interact with the **operator** class, and leverage the **synthesis**, **reasoning**, and **representation** classes for generation. In multi-turn interactions, the **memory** class is used to maintain the running context.
+```txt
+User Input
+    │
+    ▼
+┌─────────────┐
+│  Pipeline   │──── from_pretrained(): load models & initialize modules
+│             │
+│  __call__() │──┬── process() ──► Operator (validate & preprocess)
+│      │      │  │
+│      │      │  ├── ► Synthesis.predict()           → multimodel outputs
+│      │      │  ├── ► Reasoning.inference()         → text outputs
+│      │      │  └── ► Representation.get_repr..()   → 3D outputs
+│      │      │
+│  stream()   │──┬── memory.select()  → retrieve context
+│      │      │  ├── __call__()       → generate current turn
+│      │      │  └── memory.record()  → store results
+└─────────────┘
+```
+
 
 ### Planning
 

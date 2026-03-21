@@ -3,6 +3,10 @@ from typing import Optional, Generator, List
 
 
 class PipelineABC:
+    """
+    We delete the save_pretrained function.
+    and save training function will add in the next repo.
+    """
     def __init__(self):
         pass
 
@@ -17,10 +21,4 @@ class PipelineABC:
         pass
 
     def stream(self, *args, **kwds)-> Generator[torch.Tensor, List[str], None]:
-        pass
-
-    def save_pretrained(self, save_directory: str):
-        """
-        finish this part after the training pipeline is prepared.
-        """
         pass
