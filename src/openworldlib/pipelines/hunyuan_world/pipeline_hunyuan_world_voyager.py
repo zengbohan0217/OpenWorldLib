@@ -8,7 +8,7 @@ import os
 from PIL import Image
 from typing import Optional, Any
 from ..pipeline_utils import PipelineABC
-from ...operators.hunyuan_world_voager_operator import HunyuanWorldVoyagerOperator
+from ...operators.hunyuan_world_voager_operator import HunyuanWorldVoyagerOperator, camera_list
 from ...representations.point_clouds_generation.hunyuan_world.hunyuan_world_voyager_representation import HunyuanWorldVoyagerRepresentation
 from ...synthesis.visual_generation.hunyuan_world.hunyuan_world_voyager_synthesis import HunyuanWorldVoyagerSynthesis
 from ...synthesis.visual_generation.hunyuan_world.hunyuan_world_voyager.config import parse_args
@@ -95,61 +95,125 @@ class HunyuanWorldVoyagerPipeline(PipelineABC):
         
         return pipeline
 
-    def process(self, input_image, interaction_signal="forward"):
+    def process(self, input_image, num_frames=None, interaction_signal="forward"):
         # transform input image and interaction signal into hunyuan video input
         input_image, image_tensor = self.operators.process_perception(input_image, self.device)
         Height, Width = input_image.shape[:2] if hasattr(input_image, 'shape') else (256, 256)
-        
-        # generate intrinsics and extrinsics for the first frame based on the interaction signal
-        self.operators.get_interaction(interaction_signal)
-        intrinsics, extrinsics = self.operators.process_interaction(
-            num_frames=1, Width=Width, Height=Height, fx=256, fy=256
-        )
-        
-        # generate representation (points, colors, depth) based on the input image and camera parameters
-        input_data = {
-            'image': input_image,
-            'image_tensor': image_tensor,
-            'intrinsics': intrinsics,
-            'extrinsics': extrinsics
-        }
-        points, colors, depth = self.represent_model.get_representation(input_data)
-        
-        # generate intrinsics and extrinsics for the whole video based on the interaction signal
-        intrinsics, extrinsics = self.operators.process_interaction(
-            num_frames=49, Width=Width//2, Height=Height//2, fx=128, fy=128
-        )
-        self.operators.delete_last_interaction()
-        
-        # rendering the video
-        render_list, mask_list, depth_list = self.represent_model.render_video(
-            points, colors, extrinsics, intrinsics, height=Height//2, width=Width//2
-        )
-        hunyuan_video_input = self.rendering_model.create_hunyuan_video_input(render_list, mask_list, depth_list,
-                                                                              Width=Width, Height=Height)
+        num_frames = num_frames if num_frames is not None else self.rendering_args.video_length
 
+        # check interaction signal and generate intrinsics and extrinsics for the video
+        if isinstance(interaction_signal, str):
+            # single interaction
+            self.operators.get_interaction(interaction_signal)
+            intrinsics, extrinsics = self.operators.process_interaction(
+                num_frames=1, Width=Width, Height=Height, fx=256, fy=256
+            )
+
+            # generate representation (points, colors, depth) based on the input image and camera parameters
+            input_data = {
+                'image': input_image,
+                'image_tensor': image_tensor,
+                'intrinsics': intrinsics,
+                'extrinsics': extrinsics
+            }
+            points, colors, depth = self.represent_model.get_representation(input_data)
+
+            # generate intrinsics and extrinsics for the whole video based on the interaction signal
+            intrinsics, extrinsics = self.operators.process_interaction(
+                num_frames=num_frames, Width=Width//2, Height=Height//2, fx=128, fy=128
+            )
+            self.operators.delete_last_interaction()
+
+            # rendering the video
+            render_list, mask_list, depth_list = self.represent_model.render_video(
+                points, colors, extrinsics, intrinsics, height=Height//2, width=Width//2
+            )
+        elif isinstance(interaction_signal, list):
+            # 交互序列 - 多轮逻辑
+            # 使用第一个交互生成 representation
+            first_interaction = interaction_signal[0]
+            self.operators.get_interaction(first_interaction)
+            intrinsics_first, extrinsics_first = self.operators.process_interaction(
+                num_frames=1, Width=Width, Height=Height, fx=256, fy=256
+            )
+
+            input_data = {
+                'image': input_image,
+                'image_tensor': image_tensor,
+                'intrinsics': intrinsics_first,
+                'extrinsics': extrinsics_first
+            }
+            points, colors, depth = self.represent_model.get_representation(input_data)
+
+            # calculate number of frames for each interaction, distribute remaining frames to the first few interactions
+            num_interactions = len(interaction_signal)
+            num_frames_per_interaction = num_frames // num_interactions
+            remaining_frames = num_frames % num_interactions
+
+            all_intrinsics = []
+            all_extrinsics = []
+            prev_extrinsic = None  # ← utilize last frame's extrinsic for smooth transition between interactions
+
+            for i, interaction in enumerate(interaction_signal):
+                frames_for_this = num_frames_per_interaction + (1 if i < remaining_frames else 0)
+                self.operators.interaction_history.append(interaction)
+                intrinsics, extrinsics = camera_list(
+                    num_frames=frames_for_this,
+                    type=interaction,
+                    Width=Width//2,
+                    Height=Height//2,
+                    fx=128,
+                    fy=128,
+                    prev_extrinsic=prev_extrinsic  # ← input last frame's extrinsic for smooth transition
+                )
+                all_intrinsics.append(intrinsics)
+                all_extrinsics.append(extrinsics)
+                prev_extrinsic = extrinsics[-1]  # ← save last frame's extrinsic for next interaction
+
+            # concatenate all intrinsics and extrinsics
+            intrinsics = np.concatenate(all_intrinsics, axis=0)
+            extrinsics = np.concatenate(all_extrinsics, axis=0)
+
+            # rendering the coarse video
+            render_list, mask_list, depth_list = self.represent_model.render_video(
+                points, colors, extrinsics, intrinsics, height=Height//2, width=Width//2
+            )
+        else:
+            raise ValueError(f"interaction_signal must be a string or list, got {type(interaction_signal)}")
+
+        hunyuan_video_input = self.rendering_model.create_hunyuan_video_input(render_list, mask_list, depth_list,
+                                                                            Width=Width, Height=Height)
         if self.save_representation_video:
             self.represent_model.save_representation_video(
                 render_list, mask_list, depth_list, self.rendering_args.input_path, separate=True, 
                 ref_image=input_image, ref_depth=depth, Width=Width, Height=Height
             )
-        
+
         return hunyuan_video_input
 
     def __call__(self,
                  images,
                  interactions="forward",
                  prompt = "",
+                 num_frames = None,
                  output_save_path = "./output/hunyuan_world_voyager/final_render",
                  i2v_stability=True,
                  **kwargs):
-        """调用接口，支持额外参数"""
-        hunayuan_video_input = self.process(images, interactions, **kwargs)
+        """inference function of the pipeline"""
+        video_length = num_frames if num_frames is not None else self.rendering_args.video_length
+        if (video_length - 1) % 4 != 0:
+            adjusted = ((video_length - 1) // 4) * 4 + 1
+            print(f"Warning: video_length must be a multiple of 4 plus 1 (i.e., (n*4)+1). "
+                f"Got {video_length}, automatically adjusted to {adjusted}.")
+            video_length = adjusted
+
+        hunayuan_video_input = self.process(images, num_frames=video_length, 
+                                            interaction_signal=interactions, **kwargs)
         outputs = self.rendering_model.predict(
             prompt=prompt,
             height=self.rendering_args.video_size[0],
             width=self.rendering_args.video_size[1],
-            video_length=self.rendering_args.video_length,
+            video_length=video_length,
             seed=self.rendering_args.seed,
             negative_prompt=self.rendering_args.neg_prompt,
             infer_steps=self.rendering_args.infer_steps,

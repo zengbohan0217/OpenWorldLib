@@ -6,6 +6,7 @@ import json
 import imageio
 import pyexr
 from typing import Dict, Union
+from huggingface_hub import snapshot_download, hf_hub_download
 
 from ...base_representation import BaseRepresentation
 # import the corresponding depth model
@@ -252,7 +253,14 @@ class HunyuanWorldVoyagerRepresentation(BaseRepresentation):
                            f"Available models: {list(DEPTH_MODEL_DICT.keys())}")
         
         if depth_model_name == 'moge_v1':
-            pretrained_model_path = os.path.join(pretrained_model_path, 'model.pt')
+            if os.path.isdir(pretrained_model_path):
+                model_root = pretrained_model_path
+            else:
+                # download from HuggingFace repo_id
+                print(f"Downloading weights from HuggingFace repo: {pretrained_model_path}")
+                model_root = snapshot_download(pretrained_model_path)
+                print(f"Model downloaded to: {model_root}")
+            pretrained_model_path = os.path.join(model_root, 'model.pt')
             depth_model_class = DEPTH_MODEL_DICT[depth_model_name]
             depth_model = depth_model_class.from_pretrained(
                 pretrained_model_path, 

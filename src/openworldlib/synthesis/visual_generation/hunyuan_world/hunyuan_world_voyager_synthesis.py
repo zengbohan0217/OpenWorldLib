@@ -711,9 +711,9 @@ class HunyuanWorldVoyagerSynthesis(object):
         ref_images = [Image.fromarray(((torch.clamp(ref_images_pixel_values[0, :3, 0].permute(
             1, 2, 0), min=-1, max=1).cpu().numpy() + 1) * 0.5 * 255).astype(np.uint8))]
 
-        # prepare partial_cond (49 frames)
+        # prepare partial_cond (video_length frames)
         partial_cond_list = []
-        for j in range(49):
+        for j in range(video_length):
             # deal with RGB image
             rgb = self.process(Image.fromarray(render_list[j]).resize((closest_size[1], closest_size[0])))
             
@@ -729,9 +729,9 @@ class HunyuanWorldVoyagerSynthesis(object):
 
         partial_cond = torch.stack(partial_cond_list, dim=1).unsqueeze(0).to(self.device)
 
-        # prepare partial_mask (49 frames)
+        # prepare partial_mask (video_length frames)
         partial_mask_list = []
-        for j in range(49):
+        for j in range(video_length):
             # mask 同时用于 RGB 和 depth
             mask_img = Image.fromarray(mask_list[j]).resize((closest_size[1], closest_size[0]))
             mask = self.process(mask_img)
