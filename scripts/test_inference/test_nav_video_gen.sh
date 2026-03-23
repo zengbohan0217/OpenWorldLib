@@ -47,7 +47,7 @@ case $METHOD_NAME in
         ;;
     "lingbot-world")
         echo "Executing: lingbot_world..."
-        torchrun --nproc_per_node=8 test/test_lingbot_world.py
+        torchrun --nproc_per_node=2 test/test_lingbot_world.py
         ;;
     *)
         # If the input does not match any method, show an error message

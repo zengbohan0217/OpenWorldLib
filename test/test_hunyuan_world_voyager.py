@@ -18,6 +18,7 @@ pipeline = HunyuanWorldVoyagerPipeline.from_pretrained(
 )
 
 print("Testing interaction sequence...")
-interaction_sequence = ["forward", "backward", "camera_l"] # can also be a single interaction
-output_video = pipeline(images=input_image, interactions=interaction_sequence, prompt=test_prompt)
+interaction_sequence = ["forward", "left", "camera_r"] # can also be a single interaction
+output_video = pipeline(images=input_image, interactions=interaction_sequence,
+                        prompt=test_prompt, num_frames=37)
 imageio.mimsave("hunyuan_world_voyager_sequence.mp4", output_video, fps=12)
