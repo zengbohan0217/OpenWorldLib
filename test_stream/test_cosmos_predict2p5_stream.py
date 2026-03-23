@@ -28,7 +28,7 @@ pipeline = CosmosPredict2p5Pipeline.from_pretrained(
     token=token,
     mode="img2world",
     device="cuda",
-    weight_dtype=torch.bfloat16
+    weight_dtype=torch.bfloat16,
 )
 
 # Set default negative prompt
@@ -80,8 +80,9 @@ while True:
         prompt=user_prompt,
         images=last_frame_img,
         image_path=image_path,
+        cond_timestep=0.1,
         output_type='pt',  # Optional[str] = 'pt', 'pil', 'np' ...
-        num_inference_steps=1,
+        num_inference_steps=35,
     )
 
     last_frame_img = pipeline.memory_module.select()

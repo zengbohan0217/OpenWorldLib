@@ -67,7 +67,7 @@ class CosmosPredict2p5Synthesis(BaseSynthesis):
         token: Optional[str] = None,
         device: Optional[torch.device] = None,
         weight_dtype: Optional[torch.dtype] = torch.float32,
-    ) -> "Cosmos2p5PredictSynthesis":
+    ) -> "CosmosPredict2p5Synthesis":
         """
         Cosmos-Predict2.5 supports two modes: ['img2world', 'video2world'], currently we only support img2world.
         """
@@ -366,6 +366,7 @@ class CosmosPredict2p5Synthesis(BaseSynthesis):
             num_inference_steps,
             device=device,
             shift=5.0,
+            use_kerras_sigma=True,
         )
         timesteps = self.scheduler.timesteps
 
