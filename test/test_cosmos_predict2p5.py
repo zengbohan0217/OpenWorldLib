@@ -29,7 +29,7 @@ pipeline = CosmosPredict2p5Pipeline.from_pretrained(
     token=token,
     mode="img2world",
     device="cuda",
-    weight_dtype=torch.bfloat16
+    weight_dtype=torch.bfloat16,
 )
 
 # Set default negative prompt
@@ -55,6 +55,7 @@ save_path = "cosmos_predict2p5_demo.mp4"
 output_video = pipeline(
     prompt=prompt,
     image_path=image_path,
+    cond_timestep=0.1,
     output_type='np',  # Optional[str] = 'pt', 'pil', 'np' ...
     num_inference_steps=35,
 )[0]  # shape: (T, H, W, C)

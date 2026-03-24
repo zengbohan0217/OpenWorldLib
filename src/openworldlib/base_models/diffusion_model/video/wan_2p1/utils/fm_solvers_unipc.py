@@ -166,6 +166,7 @@ class FlowUniPCMultistepScheduler(SchedulerMixin, ConfigMixin):
         sigmas: Optional[List[float]] = None,
         mu: Optional[Union[float, None]] = None,
         shift: Optional[Union[float, None]] = None,
+        use_kerras_sigma: bool = False,
     ):
         """
         Sets the discrete timesteps used for the diffusion chain (to be run before inference).
@@ -185,6 +186,17 @@ class FlowUniPCMultistepScheduler(SchedulerMixin, ConfigMixin):
             sigmas = np.linspace(self.sigma_max, self.sigma_min,
                                  num_inference_steps +
                                  1).copy()[:-1]  # pyright: ignore
+        
+        if use_kerras_sigma:
+            # force to use the exact sigma used in edm sampler
+            sigma_max = 200
+            sigma_min = 0.01
+            rho = 7
+            sigmas = np.arange(num_inference_steps + 1) / num_inference_steps
+            min_inv_rho = sigma_min ** (1 / rho)
+            max_inv_rho = sigma_max ** (1 / rho)
+            sigmas = (max_inv_rho + sigmas * (min_inv_rho - max_inv_rho)) ** rho
+            sigmas = sigmas / (1 + sigmas)
 
         if self.config.use_dynamic_shifting:
             sigmas = self.time_shift(mu, 1.0, sigmas)  # pyright: ignore
