@@ -1,7 +1,9 @@
 import os
+from PIL import Image
 from openworldlib.pipelines.hunyuan_world.pipeline_hunyuan_worldplay import HunyuanWorldPlayPipeline
 
 image_path = "./data/test_case/test_image_case1/ref_image.png"
+input_image = Image.open(image_path).convert("RGB")
 prompt = "A cozy snowy fairy-tale village with thatched cottages covered in thick snow."
 interaction_signal = ["forward", "camera_l", "camera_r"]
 video_sync_path = "tencent/HunyuanVideo-1.5"
@@ -19,7 +21,7 @@ pipeline = HunyuanWorldPlayPipeline.from_pretrained(
 )
 output = pipeline(
     prompt=prompt,
-    image_path=image_path,
+    image=input_image,
     interactions=interaction_signal,
     forward_speed=0.08,
     yaw_speed_deg=3.0,

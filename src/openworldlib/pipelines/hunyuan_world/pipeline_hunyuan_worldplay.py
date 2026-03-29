@@ -1,5 +1,6 @@
 from typing import Optional, Generator, List
 import torch
+from PIL import Image
 from ..pipeline_utils import PipelineABC
 from ...operators.hunyuan_worldplay_operator import HunyuanWorldPlayOperator
 from ...synthesis.visual_generation.hunyuan_world.hunyuan_worldplay_synthesis import HunyuanWorldPlaySynthesis
@@ -154,7 +155,7 @@ class HunyuanWorldPlayPipeline(PipelineABC):
         self,
         *,
         prompt: str,
-        image_path: Optional[str] = None,
+        image: Optional[Image.Image] = None,
         interactions: Optional[str] = None,
         num_frames: int = 125,
         pose: Optional[str] = None,
@@ -182,7 +183,7 @@ class HunyuanWorldPlayPipeline(PipelineABC):
         
         Args:
             prompt: 文本提示
-            image_path: 图像路径
+            image: 参考图像（PIL.Image）
             pose: 相机轨迹（如 "w-10, right-10, d-11"）
             aspect_ratio: 宽高比
             num_frames: 帧数
@@ -220,7 +221,7 @@ class HunyuanWorldPlayPipeline(PipelineABC):
             print(f"video_length {video_length} != inferred_video_length {inferred_video_length}, auto setting")
             video_length = inferred_video_length
         processed = self.process(
-            input_=image_path,
+            input_=image,
             interaction=pose_value,
             video_length=video_length,
         )
