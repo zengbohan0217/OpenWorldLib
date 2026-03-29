@@ -8,6 +8,128 @@ import io
 
 from .base_operator import BaseOperator
 
+from ..representations.point_clouds_generation.flash_world.flash_world.utils import (
+    matrix_to_quaternion,
+    quaternion_to_matrix,
+)
+
+# Shared focal point for look-at and dolly forward/backward (must stay consistent).
+_LOOK_AT_TARGET = np.array([0.0, 0.5, 0.0], dtype=np.float64)
+
+
+def _look_at_quaternion_wxyz(
+    pos: np.ndarray, target: Optional[np.ndarray] = None
+) -> List[float]:
+    """World-from-camera rotation as wxyz quaternion; camera looks from pos toward target."""
+    if target is None:
+        target = _LOOK_AT_TARGET
+    pos = np.asarray(pos, dtype=np.float64)
+    target = np.asarray(target, dtype=np.float64)
+    forward = target - pos
+    forward = forward / (np.linalg.norm(forward) + 1e-8)
+    world_up = np.array([0.0, 1.0, 0.0], dtype=np.float64)
+    right = np.cross(world_up, forward)
+    rn = np.linalg.norm(right)
+    if rn < 1e-8:
+        right = np.array([1.0, 0.0, 0.0], dtype=np.float64)
+    else:
+        right = right / rn
+    up = np.cross(forward, right)
+    backward = -forward
+    r_mat = np.stack([right, up, backward], axis=1).astype(np.float32)
+    q = matrix_to_quaternion(torch.from_numpy(r_mat).unsqueeze(0)).squeeze(0)
+    return [float(q[i]) for i in range(4)]
+
+
+# In-place rotation magnitudes per segment (position unchanged for camera_* turns).
+_YAW_PER_SEGMENT = np.pi / 4
+_PITCH_PER_SEGMENT = np.pi / 6
+
+
+def _quat_wxyz_to_R(q: List[float]) -> np.ndarray:
+    t = torch.tensor(q, dtype=torch.float32).unsqueeze(0)
+    return quaternion_to_matrix(t).squeeze(0).detach().cpu().numpy()
+
+
+def _view_dir_world_from_quat(quat_wxyz: List[float]) -> np.ndarray:
+    """Unit vector in world space along the camera viewing axis (into the scene, FlashWorld c2w)."""
+    r = _quat_wxyz_to_R(quat_wxyz)
+    # Camera looks along -Z in camera coords -> world direction is -third column of R.
+    v = -np.asarray(r[:, 2], dtype=np.float64)
+    n = np.linalg.norm(v)
+    if n < 1e-8:
+        return np.array([0.0, 0.0, -1.0], dtype=np.float64)
+    return v / n
+
+
+def _camera_right_world_from_quat(quat_wxyz: List[float]) -> np.ndarray:
+    """Unit vector along camera +X in world space (strafe right); left is -this."""
+    r = _quat_wxyz_to_R(quat_wxyz)
+    v = np.asarray(r[:, 0], dtype=np.float64)
+    n = np.linalg.norm(v)
+    if n < 1e-8:
+        return np.array([1.0, 0.0, 0.0], dtype=np.float64)
+    return v / n
+
+
+def _R_to_quat_wxyz(r: np.ndarray) -> List[float]:
+    t = torch.from_numpy(r.astype(np.float32)).unsqueeze(0)
+    q = matrix_to_quaternion(t).squeeze(0)
+    return [float(q[i]) for i in range(4)]
+
+
+def _rot_y(angle: float) -> np.ndarray:
+    c, s = np.cos(angle), np.sin(angle)
+    return np.array([[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]], dtype=np.float64)
+
+
+def _axis_angle_matrix(axis: np.ndarray, angle: float) -> np.ndarray:
+    axis = np.asarray(axis, dtype=np.float64)
+    axis = axis / (np.linalg.norm(axis) + 1e-8)
+    x, y, z = axis
+    c, s = np.cos(angle), np.sin(angle)
+    c1 = 1.0 - c
+    return np.array(
+        [
+            [c + x * x * c1, x * y * c1 - z * s, x * z * c1 + y * s],
+            [y * x * c1 + z * s, c + y * y * c1, y * z * c1 - x * s],
+            [z * x * c1 - y * s, z * y * c1 + x * s, c + z * z * c1],
+        ],
+        dtype=np.float64,
+    )
+
+
+def _rotate_yaw_world(quat_wxyz: List[float], yaw: float) -> List[float]:
+    """Apply world +Y yaw after current camera orientation (pan left/right in place)."""
+    r0 = _quat_wxyz_to_R(quat_wxyz)
+    r_new = _rot_y(yaw) @ r0
+    return _R_to_quat_wxyz(r_new)
+
+
+def _rotate_pitch_local(quat_wxyz: List[float], pitch: float) -> List[float]:
+    """Pitch around camera right axis (tilt up/down in place)."""
+    r0 = _quat_wxyz_to_R(quat_wxyz)
+    right = r0[:, 0]
+    rp = _axis_angle_matrix(right, pitch)
+    r_new = rp @ r0
+    return _R_to_quat_wxyz(r_new)
+
+
+def _orientation_in_place_at_t(
+    quat_start: List[float], action: str, t: float
+) -> List[float]:
+    """Camera fixed; orientation interpolated over segment (t in [0, 1])."""
+    t = float(np.clip(t, 0.0, 1.0))
+    if action == "camera_l":
+        return _rotate_yaw_world(quat_start, -t * _YAW_PER_SEGMENT)
+    if action == "camera_r":
+        return _rotate_yaw_world(quat_start, t * _YAW_PER_SEGMENT)
+    if action == "camera_up":
+        return _rotate_pitch_local(quat_start, t * _PITCH_PER_SEGMENT)
+    if action == "camera_down":
+        return _rotate_pitch_local(quat_start, -t * _PITCH_PER_SEGMENT)
+    raise ValueError(f"Not an in-place camera orientation action: {action}")
+
 
 class FlashWorldOperator(BaseOperator):
     """Operator for FlashWorld pipeline utilities."""
@@ -29,9 +151,9 @@ class FlashWorldOperator(BaseOperator):
             operation_types: List of operation types
             interaction_template: List of valid interaction types
                 - "text_prompt": Text description for scene generation
-                - "forward/backward/left/right/up/down": Camera movement
-                - "camera_l/r": Camera rotation (left/right)
-                - "camera_zoom_in/out": Camera zoom
+                - "forward/backward/left/right": Translation along view / strafe (camera-relative)
+                - "camera_l/r/up/down": Pan/tilt in place (position fixed; yaw/pitch)
+                - "camera_zoom_in/out": Zoom (focal length; position fixed)
         """
         super(FlashWorldOperator, self).__init__(operation_types=operation_types)
         self.interaction_template = interaction_template
@@ -88,21 +210,17 @@ class FlashWorldOperator(BaseOperator):
         if len(self.current_interaction) == 0:
             raise ValueError("No interaction to process. Use get_interaction() first.")
         
-        # Get the latest interaction
         latest_interaction = self.current_interaction[-1]
         self.interaction_history.append(latest_interaction)
         
         num_frames = num_frames or 16
         
-        # Extract text prompts
         text_prompt = ""
-        camera_actions = []
-        for interaction in self.current_interaction:
-            if interaction == "text_prompt":
-                # Text prompt should be passed separately via data
-                pass
-            elif interaction.startswith("camera_"):
-                camera_actions.append(interaction)
+        # Preserve list order; every non-text entry is a motion segment (forward, left, camera_l, ...)
+        camera_actions = [
+            a for a in self.current_interaction
+            if a != "text_prompt"
+        ]
         
         # Convert camera actions to camera parameters
         cameras = self._camera_actions_to_cameras(
@@ -120,6 +238,79 @@ class FlashWorldOperator(BaseOperator):
         
         return result
     
+    def _segment_frame_counts(self, num_frames: int, n_segments: int) -> List[int]:
+        """Split num_frames into n_segments contiguous parts (>=1 each when num_frames >= n_segments)."""
+        if n_segments <= 0:
+            return []
+        if num_frames < n_segments:
+            n_segments = num_frames
+        base = num_frames // n_segments
+        rem = num_frames % n_segments
+        return [base + (1 if i < rem else 0) for i in range(n_segments)]
+
+    def _apply_action_end_state(
+        self,
+        pos: np.ndarray,
+        zoom: float,
+        action: str,
+        quat: Optional[List[float]] = None,
+    ) -> tuple:
+        """Apply one full action (t=1) from current pose; returns (new_pos, new_zoom)."""
+        p = pos.astype(np.float64).copy()
+        z = float(zoom)
+        q_use = quat if quat is not None else _look_at_quaternion_wxyz(p)
+
+        if action == "forward":
+            # Dolly along current viewing direction (after camera_* pan/tilt), not toward old focal.
+            fwd = _view_dir_world_from_quat(q_use)
+            dist = float(np.linalg.norm(_LOOK_AT_TARGET - p))
+            step = 0.40 * max(dist, 0.15)
+            p = p + step * fwd
+        elif action == "backward":
+            # Dolly back along the same optical axis (paired with forward).
+            fwd = _view_dir_world_from_quat(q_use)
+            dist = float(np.linalg.norm(p - _LOOK_AT_TARGET))
+            step = 0.35 * max(dist, 0.15)
+            p = p - step * fwd
+        elif action == "left":
+            right = _camera_right_world_from_quat(q_use)
+            p = p - 0.55 * right
+        elif action == "right":
+            right = _camera_right_world_from_quat(q_use)
+            p = p + 0.55 * right
+        elif action == "camera_up":
+            pass
+        elif action == "camera_down":
+            pass
+        elif action == "camera_l":
+            pass
+        elif action == "camera_r":
+            pass
+        elif action == "camera_zoom_in":
+            z *= 1.18
+        elif action == "camera_zoom_out":
+            z *= 0.86
+        else:
+            pass
+        return p.astype(np.float64), z
+
+    def _interp_pose_for_action(
+        self,
+        pos_start: np.ndarray,
+        zoom_start: float,
+        action: str,
+        t: float,
+        quat: Optional[List[float]] = None,
+    ) -> tuple:
+        """Linear interpolation within one segment: t in [0, 1]."""
+        t = float(np.clip(t, 0.0, 1.0))
+        pos_end, zoom_end = self._apply_action_end_state(
+            pos_start, zoom_start, action, quat=quat
+        )
+        pos = (1.0 - t) * pos_start + t * pos_end
+        zoom = (1.0 - t) * zoom_start + t * zoom_end
+        return pos, zoom
+
     def _camera_actions_to_cameras(
         self,
         camera_actions: List[str],
@@ -129,80 +320,73 @@ class FlashWorldOperator(BaseOperator):
     ) -> List[Dict[str, Any]]:
         """
         Convert camera action strings to camera parameter dictionaries.
-        
-        Args:
-            camera_actions: List of camera action strings
-            num_frames: Number of frames
-            image_width: Image width
-            image_height: Image height
-            
-        Returns:
-            List of camera dictionaries with position, quaternion, and intrinsics
+        Each list entry runs in order over its own contiguous frame sub-range
+        (first action -> first segment, second -> next segment, ...).
         """
         if not camera_actions:
-            # Default circular camera path
             return self._create_default_cameras(num_frames, image_width, image_height)
-        
-        # Process camera actions to generate camera trajectory
-        cameras = []
-        radius = 2.0
-        base_position = np.array([0.0, 0.5, 2.0])  # Default position
-        
-        for i in range(num_frames):
-            # Apply camera actions sequentially
-            position = base_position.copy()
-            angle = 2 * np.pi * i / num_frames
-            
-            # Process each camera action
-            for action in camera_actions:
-                if action == "forward":
-                    position[2] -= 0.1 * (i / num_frames)
-                elif action == "backward":
-                    position[2] += 0.1 * (i / num_frames)
-                elif action == "left":
-                    position[0] -= 0.1 * (i / num_frames)
-                elif action == "right":
-                    position[0] += 0.1 * (i / num_frames)
-                elif action == "camera_up":
-                    position[1] += 0.1 * (i / num_frames)
-                elif action == "camera_down":
-                    position[1] -= 0.1 * (i / num_frames)
-                elif action == "camera_l":
-                    angle -= np.pi / 4 * (i / num_frames)
-                elif action == "camera_r":
-                    angle += np.pi / 4 * (i / num_frames)
-                # zoom_in/out affects intrinsics, handled separately
-            
-            # Calculate position based on angle (circular path with modifications)
-            x = radius * np.cos(angle) + position[0]
-            z = radius * np.sin(angle) + position[2]
-            y = position[1]
-            
-            # Calculate quaternion (look at origin)
-            direction = np.array([-x, -y, -z])
-            direction = direction / (np.linalg.norm(direction) + 1e-8)
-            
-            # Simple quaternion (identity for now, can be improved)
-            quat = [1.0, 0.0, 0.0, 0.0]
-            
-            # Handle zoom
-            zoom_factor = 1.0
-            for action in camera_actions:
-                if action == "camera_zoom_in":
-                    zoom_factor *= 1.1
-                elif action == "camera_zoom_out":
-                    zoom_factor *= 0.9
-            
-            camera = {
-                'position': [float(x), float(y), float(z)],
-                'quaternion': quat,
-                'fx': image_width * 0.7 * zoom_factor,
-                'fy': image_height * 0.7 * zoom_factor,
-                'cx': image_width * 0.5,
-                'cy': image_height * 0.5,
-            }
-            cameras.append(camera)
-        
+
+        # If more actions than frames, keep one frame per action from the start of the list
+        if len(camera_actions) > num_frames:
+            camera_actions = camera_actions[:num_frames]
+
+        segment_lengths = self._segment_frame_counts(num_frames, len(camera_actions))
+        cameras: List[Dict[str, Any]] = []
+
+        pos = np.array([0.0, 0.5, 2.0], dtype=np.float64)
+        zoom = 1.0
+        quat: List[float] = _look_at_quaternion_wxyz(pos)
+
+        for action, seg_len in zip(camera_actions, segment_lengths):
+            pos_start = pos.copy()
+            zoom_start = zoom
+            quat_start = quat.copy()
+            _, zoom_seg_end = self._apply_action_end_state(
+                pos_start, zoom_start, action, quat=quat_start
+            )
+
+            for j in range(seg_len):
+                if seg_len <= 1:
+                    t = 1.0
+                else:
+                    t = j / (seg_len - 1)
+
+                if action in ("camera_l", "camera_r", "camera_up", "camera_down"):
+                    p = pos_start.copy()
+                    zm = zoom_start
+                    q = _orientation_in_place_at_t(quat_start, action, t)
+                elif action in ("camera_zoom_in", "camera_zoom_out"):
+                    p = pos_start.copy()
+                    zm = (1.0 - t) * zoom_start + t * zoom_seg_end
+                    q = quat_start.copy()
+                else:
+                    # Translation: fixed heading; forward/backward use quat_start so dolly is along view.
+                    p, zm = self._interp_pose_for_action(
+                        pos_start, zoom_start, action, t, quat=quat_start
+                    )
+                    q = quat_start.copy()
+
+                fx = image_width * 0.7 * zm
+                fy = image_height * 0.7 * zm
+                cameras.append({
+                    'position': [float(p[0]), float(p[1]), float(p[2])],
+                    'quaternion': q,
+                    'fx': fx,
+                    'fy': fy,
+                    'cx': image_width * 0.5,
+                    'cy': image_height * 0.5,
+                })
+
+            pos, zoom = self._apply_action_end_state(
+                pos_start, zoom_start, action, quat=quat_start
+            )
+            if action in ("forward", "backward", "left", "right"):
+                quat = quat_start.copy()
+            elif action in ("camera_l", "camera_r", "camera_up", "camera_down"):
+                quat = _orientation_in_place_at_t(quat_start, action, 1.0)
+            elif action in ("camera_zoom_in", "camera_zoom_out"):
+                quat = quat_start.copy()
+
         return cameras
     
     def _create_default_cameras(
@@ -232,13 +416,8 @@ class FlashWorldOperator(BaseOperator):
             x = radius * np.cos(angle)
             z = radius * np.sin(angle)
             y = 0.5
-            
-            # Look at origin
-            direction = np.array([-x, -y, -z])
-            direction = direction / (np.linalg.norm(direction) + 1e-8)
-            
-            # Simple quaternion (identity rotation)
-            quat = [1.0, 0.0, 0.0, 0.0]
+            pos = np.array([x, y, z], dtype=np.float64)
+            quat = _look_at_quaternion_wxyz(pos)
             
             camera = {
                 'position': [float(x), float(y), float(z)],
