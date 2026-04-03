@@ -349,7 +349,22 @@
 
 #### Joint-Embedding Predictive Architecture (JEPA)
 
+<details>
+<summary><strong> JEPA Family Models </strong></summary>
 
+- **I-JEPA** · [[Paper]](https://arxiv.org/pdf/2301.08243) [[Code]](https://github.com/facebookresearch/ijepa)
+- **MC-JEPA** · [[Paper]](https://arxiv.org/pdf/2307.12698) [[Code]](#)
+- **V-JEPA** · [[Paper]](https://arxiv.org/pdf/2404.08471) [[Code]](https://github.com/facebookresearch/jepa)
+- **Point-JEPA** · [[Paper]](https://arxiv.org/pdf/2404.16432) [[Code]](https://github.com/Ayumu-J-S/Point-JEPA)
+- **3D-JEPA** · [[Paper]](https://arxiv.org/pdf/2409.15803) [[Code]](#)
+- **ACT-JEPA** · [[Paper]](https://arxiv.org/pdf/2501.14622) [[Code]](#)
+- **V-JEPA 2** · [[Paper]](https://arxiv.org/pdf/2506.09985) [[Code]](https://github.com/facebookresearch/vjepa2)
+- **Audio-JEPA** · [[Paper]](https://arxiv.org/pdf/2507.02915) [[Code]](https://github.com/LudovicTuncay/Audio-JEPA)
+- **LeJEPA** · [[Paper]](https://arxiv.org/pdf/2511.08544) [[Code]](https://github.com/galilai-group/lejepa)
+- **Causal-JEPA** · [[Paper]](https://arxiv.org/pdf/2602.11389) [[Code]](https://github.com/galilai-group/cjepa)
+- **LeWorldModel** · [[Paper]](https://arxiv.org/pdf/2603.19312v1) [[Code]](https://github.com/lucas-maes/le-wm)
+- **Think-JEPA** · [[Paper]](https://arxiv.org/pdf/2603.22281) [[Code]](#)
+</details>
 
 ---
 
