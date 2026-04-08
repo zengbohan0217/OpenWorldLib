@@ -200,6 +200,7 @@
 <details>
 <summary><strong> general video generation model </strong></summary>
 
+- **Helios** · [[Paper]](https://arxiv.org/pdf/2603.04379) [[Code]](https://github.com/PKU-YuanGroup/Helios)
 - **veo-3** · [[Paper]](https://arxiv.org/pdf/2509.20328) [[Code]](#)
 - **wan-2.5** · [[Paper]](https://arxiv.org/pdf/2503.20314) [[Code]](https://github.com/Wan-Video/Wan2.1)
 - **Waver** · [[Paper]](https://arxiv.org/pdf/2508.15761) [[Code]](https://github.com/FoundationVision/Waver)
