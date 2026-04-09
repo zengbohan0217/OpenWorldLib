@@ -4,7 +4,7 @@ from diffusers.utils import export_to_video
 from pathlib import Path
 
 
-def infer_matrix_game2_pipeline(pipe, input_image, interaction_signal, output_path=None, fps=None):
+def infer_matrix_game2_pipeline(pipe, input_image, interaction_signal, output_path=None, fps=None, **kwargs):
     num_output_frames = len(interaction_signal) * 12
     output_video = pipe(
         images=input_image,
@@ -20,7 +20,7 @@ def infer_matrix_game2_pipeline(pipe, input_image, interaction_signal, output_pa
     return output_video
 
 
-def infer_hunyuan_game_craft_pipeline(pipe, input_image, interaction_signal, output_path=None, fps=None):
+def infer_hunyuan_game_craft_pipeline(pipe, input_image, interaction_signal, output_path=None, fps=None, **kwargs):
     num_output_frames = len(interaction_signal) * 12
     input_interactions = []
     for signal in interaction_signal:
@@ -39,7 +39,7 @@ def infer_hunyuan_game_craft_pipeline(pipe, input_image, interaction_signal, out
     return output_video
 
 
-def infer_lingbot_world_pipeline(pipe, input_image, interaction_signal, output_path=None, fps=None):
+def infer_lingbot_world_pipeline(pipe, input_image, interaction_signal, output_path=None, fps=None, **kwargs):
     num_output_frames = len(interaction_signal) * 36 + 1
     output_video = pipe(
     images=input_image,
@@ -53,6 +53,29 @@ def infer_lingbot_world_pipeline(pipe, input_image, interaction_signal, output_p
         export_to_video(output_video, str(output_path), fps=fps)
     return output_video
 
+
+def infer_matrix_game3_pipeline(pipe, input_image, interaction_signal, output_path=None, fps=None, prompt=None, **kwargs):
+    """
+    Matrix-Game-3 wrapper inference.
+    Upstream generates and saves mp4; we return the saved path.
+    """
+    output_path = Path(output_path) if output_path is not None else None
+    save_name = output_path.stem if output_path is not None else "matrix_game_3_demo"
+    output_dir = str(output_path.parent) if output_path is not None else None
+    prompt_text = prompt or "A first-person view interactive scene."
+
+    video_path = pipe(
+        images=input_image,
+        interactions=interaction_signal,
+        prompt=prompt_text,
+        output_dir=output_dir,
+        save_name=save_name,
+    )
+
+    # If caller requested a specific output file name that isn't mp4, keep behavior simple:
+    # - if it's .mp4, we already generated it at that exact name
+    # - otherwise, return the actual generated mp4 path
+    return video_path
 
 def infer_wan2p2_pipeline(pipe, prompt, image_path=None, size="1280*704", output_path=None, fps=None):
     output_video = pipe(
@@ -135,6 +158,8 @@ def infer_cosmos_predict2p5_pipeline(pipe, prompt, input_image, output_path=None
 
 video_gen_pipe_infer = {
     "matrix-game2": infer_matrix_game2_pipeline,
+    "matrix-game3": infer_matrix_game3_pipeline,
+    "matrix-game-3": infer_matrix_game3_pipeline,
     "wan2p2": infer_wan2p2_pipeline,
     "hunyuan-game-craft": infer_hunyuan_game_craft_pipeline,
     "lingbot-world": infer_lingbot_world_pipeline,
