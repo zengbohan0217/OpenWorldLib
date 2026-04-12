@@ -106,6 +106,13 @@ In this document, we list the installation requirements and installation scripts
     <td><code>bash scripts/setup/default_3D_install.sh</code></td>
   </tr>
   <tr>
+    <td align="center">LoGeR</td>
+    <td align="center">3.10</td>
+    <td align="center">12.1</td>
+    <td>PyTorch 2.6.0</td>
+    <td><code>bash scripts/setup/loger_install.sh</code></td>
+  </tr>
+  <tr>
     <td align="center">InfiniteVGGT</td>
     <td align="center">3.10</td>
     <td align="center">12.1</td>

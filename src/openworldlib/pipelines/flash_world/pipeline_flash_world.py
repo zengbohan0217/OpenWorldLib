@@ -219,8 +219,8 @@ class FlashWorldPipeline:
         if input_ is not None:
             image = self.operator.process_perception(input_)
         
-        # Process interaction
-        text_prompt = interaction.get('text_prompt', "")
+        # Process interaction (__call__ passes "prompt"; JSON loaders may use "text_prompt")
+        text_prompt = interaction.get('text_prompt') or interaction.get('prompt', '')
         cameras = interaction.get('cameras')
         
         # Convert cameras to tensor if needed
@@ -331,7 +331,7 @@ class FlashWorldPipeline:
         if interactions is not None:
             # Clear previous interactions
             self.operator.current_interaction = []
-            # Add new interactions
+            # Add new interactions (order preserved; operator applies them sequentially per frame segment)
             for interaction in interactions:
                 self.operator.get_interaction(interaction)
             # Process interactions to get camera parameters
@@ -341,8 +341,7 @@ class FlashWorldPipeline:
                 image_height=image_height
             )
             camera_view = interaction_result['cameras']
-        elif camera_view is not None:
-            # Create default cameras if not provided
+        elif camera_view is None:
             camera_view = self._create_default_cameras(num_frames, image_width, image_height)
         
         interaction = {

@@ -6,8 +6,8 @@
 ---
 
 <a href="https://github.com/OpenDCAI/OpenWorldLib"><img alt="Build" src="https://img.shields.io/github/stars/OpenDCAI/OpenWorldLib"></a> <!-- License --> <a href="https://github.com/OpenDCAI/OpenWorldLib/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/OpenDCAI/OpenWorldLib"></a> <!-- GitHub Issues --> <a href="https://github.com/OpenDCAI/OpenWorldLib/issues"><img alt="Issues" src="https://img.shields.io/github/issues/OpenDCAI/OpenWorldLib"></a>
-<a href="https://github.com/user-attachments/assets/35d48c4f-adb3-4f10-b30f-e7f4a245ab48"><img alt="Add me on WeChat" src="https://img.shields.io/badge/Connect_on-WeChat-07C160?style=flat-square&logo=wechat&logoColor=white"></a> <img alt="Report" src="https://img.shields.io/badge/📄 Technical Report-Coming Soon-lightgrey">
-<!-- <a href="https://arxiv.org/abs/xxxx.xxxxx"><img alt="Paper" src="https://img.shields.io/badge/arXiv-xxxx.xxxxx-b31b1b?logo=arxiv&logoColor=white"></a> -->
+<a href="https://github.com/user-attachments/assets/35d48c4f-adb3-4f10-b30f-e7f4a245ab48"><img alt="Add me on WeChat" src="https://img.shields.io/badge/Connect_on-WeChat-07C160?style=flat-square&logo=wechat&logoColor=white"></a> <a href="https://arxiv.org/abs/2604.04707"><img alt="Paper" src="https://img.shields.io/badge/arXiv-2604.04707-b31b1b?logo=arxiv&logoColor=white"></a>
+<!-- <img alt="Report" src="https://img.shields.io/badge/📄 Technical Report-Coming Soon-lightgrey"> -->
 
 [English](README.md) | [中文](README_zh.md)
 
@@ -119,10 +119,11 @@ OpenWorldLib covers the following research directions related to **World Models*
 | :--- | :--- | :--- |
 | **Video Generation** | Navigation Generation | lingbot, matrix-game, hunyuan-worldplay, genie3, etc. |
 | | Long Video Generation | sora-2, veo-3, wan, etc. |
+| | Egocentric Interaction Generation | Hand2World, etc. |
 | **3D Scene Generation** | 3D Scene Generation | flash-world, vggt, etc. |
 | **Reasoning** | VQA (Visual Question Answering) | spatialVLM, omnivinci and other VLMs with world understanding |
 | | VLA (Vision-Language-Action) | pi-0, pi-0.5, giga-brain, etc. |
-
+> Commonly used inference frameworks include: [diffusers](https://github.com/huggingface/diffusers), [DiffSynth](https://github.com/modelscope/DiffSynth-Studio), [LightX2V](https://github.com/ModelTC/LightX2V)
 
 ### Getting Started
 #### Installation
@@ -228,14 +229,20 @@ This project is an extension of [DataFlow](https://github.com/OpenDCAI/DataFlow)
 
 ### Citation
 If OpenWorldLib has been helpful to you, please consider giving our repo a star 🌟 and citing the related papers:
-```bibtex
-@misc{dataflow-team-openworldlib,
+<!-- @misc{dataflow-team-openworldlib,
   author = {{OpenDCAI}},
   title = {OpenWorldLib: A Unified Codebase for Advanced World Models},
   year = {2026},
   publisher = {GitHub},
   journal = {GitHub repository},
   howpublished = {\url{https://github.com/OpenDCAI/OpenWorldLib}}
+} -->
+```bibtex
+@article{dataflow2026openworldlib,
+  title={OpenWorldLib: A Unified Codebase and Definition of Advanced World Models},
+  author={DataFlow Team and others},
+  journal={arXiv preprint arXiv:2604.04707},
+  year={2026}
 }
 
 @article{zeng2026research,

@@ -8,12 +8,12 @@ The representative methods currently being integrated are listed below. We warml
 | Method | Paper | Code Repository | Main Direction / Task |
 |---|---|---|---|
 | **Infinite-World** | [paper](https://arxiv.org/abs/2602.02393) | [code](https://github.com/MeiGen-AI/Infinite-World) | Long Navigation Video Generation |
+| **MatrixGame-3** | [paper](#) | [code](https://github.com/SkyworkAI/Matrix-Game/tree/main/Matrix-Game-3) | Long Navigation Video Generation |
 | **Solaris** | [paper](https://arxiv.org/pdf/2602.22208) | [code](https://github.com/solaris-wm/solaris) | Navigation Video Generation (multiplayer Minecraft world modeling) |
 | **Cambrian-S** | [paper](https://arxiv.org/pdf/2511.04670) | [code](https://github.com/cambrian-mllm/cambrian-s) | Spatial Reasoning |
 | **Ctrl-World** | [paper](https://arxiv.org/pdf/2510.10125) | [code](https://github.com/Robert-gyj/Ctrl-World) | VLA / Robot Manipulation (controllable generative world model) |
 | **FantasyWorld** | [paper](https://arxiv.org/pdf/2509.21657) | [code](https://github.com/Fantasy-AMAP/fantasy-world) | 3D Scene Generation (unified video and 3D prediction) |
 | **MemFlow** | [paper](https://arxiv.org/pdf/2512.14699) | [code](https://github.com/KlingTeam/MemFlow) | Long video generation |
-| **LoGeR** | [paper](https://arxiv.org/pdf/2603.03269) | [code](https://github.com/Junyi42/LoGeR) | Long video generation |
 
 > If you have methods you’d like to integrate (e.g., new world models, evaluation benchmarks, or inference pipelines), feel free to open an Issue or submit a PR directly.
 

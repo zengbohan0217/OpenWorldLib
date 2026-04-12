@@ -6,8 +6,8 @@
 ---
 
 <a href="https://github.com/OpenDCAI/OpenWorldLib"><img alt="Build" src="https://img.shields.io/github/stars/OpenDCAI/OpenWorldLib"></a> <!-- License --> <a href="https://github.com/OpenDCAI/OpenWorldLib/blob/main/LICENSE"><img alt="License" src="https://img.shields.io/github/license/OpenDCAI/OpenWorldLib"></a> <!-- GitHub Issues --> <a href="https://github.com/OpenDCAI/OpenWorldLib/issues"><img alt="Issues" src="https://img.shields.io/github/issues/OpenDCAI/OpenWorldLib"></a>
-<a href="https://github.com/user-attachments/assets/35d48c4f-adb3-4f10-b30f-e7f4a245ab48"><img alt="Add me on WeChat" src="https://img.shields.io/badge/Connect_on-WeChat-07C160?style=flat-square&logo=wechat&logoColor=white"></a> <img alt="Report" src="https://img.shields.io/badge/📄 Technical Report-Coming Soon-lightgrey">
-<!-- <a href="https://arxiv.org/abs/xxxx.xxxxx"><img alt="Paper" src="https://img.shields.io/badge/arXiv-xxxx.xxxxx-b31b1b?logo=arxiv&logoColor=white"></a> -->
+<a href="https://github.com/user-attachments/assets/35d48c4f-adb3-4f10-b30f-e7f4a245ab48"><img alt="Add me on WeChat" src="https://img.shields.io/badge/Connect_on-WeChat-07C160?style=flat-square&logo=wechat&logoColor=white"></a> <a href="https://arxiv.org/abs/2604.04707"><img alt="Paper" src="https://img.shields.io/badge/arXiv-2604.04707-b31b1b?logo=arxiv&logoColor=white"></a>
+<!-- <img alt="Report" src="https://img.shields.io/badge/📄 Technical Report-Coming Soon-lightgrey"> -->
 
 [English](README.md) | [中文](README_zh.md)
 
@@ -124,6 +124,7 @@ OpenWorldLib 涵盖以下与**世界模型**相关的研究方向，**我们衷�
 | **3D 场景生成** | 3D 场景生成 | flash-world, vggt 等 |
 | **推理** | VQA（视觉问答） | spatialVLM, omnivinci 及其他具备世界理解能力的 VLM |
 | | VLA（视觉-语言-动作） | pi-0, pi-0.5, giga-brain 等 |
+> 常用推理框架包括：[diffusers](https://github.com/huggingface/diffusers), [DiffSynth](https://github.com/modelscope/DiffSynth-Studio), [LightX2V](https://github.com/ModelTC/LightX2V)
 
 
 ### 快速开始
@@ -231,14 +232,20 @@ User Input
 
 ### 引用
 如果我们的 **OpenWorldLib** 为你带来了帮助，欢迎给我们的repo一个star🌟，并考虑引用相关论文：
-```bibtex
-@misc{dataflow-team-openworldlib,
+<!-- @misc{dataflow-team-openworldlib,
   author = {{OpenDCAI}},
   title = {OpenWorldLib: A Unified Codebase for Advanced World Models},
   year = {2026},
   publisher = {GitHub},
   journal = {GitHub repository},
   howpublished = {\url{https://github.com/OpenDCAI/OpenWorldLib}}
+} -->
+```bibtex
+@article{dataflow2026openworldlib,
+  title={OpenWorldLib: A Unified Codebase and Definition of Advanced World Models},
+  author={DataFlow Team and others},
+  journal={arXiv preprint arXiv:2604.04707},
+  year={2026}
 }
 
 @article{zeng2026research,

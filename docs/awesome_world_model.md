@@ -10,6 +10,7 @@
 - **Understanding World or Predicting Future? A Comprehensive Survey of World Models** · [[Paper]](https://arxiv.org/abs/2411.14499) [[Code]](https://github.com/tsinghua-fib-lab/World-Model)
 - **World Models in AI: Like a Child** · [[Paper]](https://arxiv.org/abs/2503.15168) [[Code]](#)
 - **The Trinity of Consistency as a Defining Principle for General World Models** · [[Paper]](https://arxiv.org/pdf/2602.23152) [[Code]](https://github.com/openraiser/awesome-world-model-evolution)
+- **Learning to Model the World: A Survey of World Models in Artificial Intelligence** · [[Paper]](https://www.preprints.org/frontend/manuscript/5086594a01b6a0b251820cb03ea9a8f6/download_pub)
 </details>
 
 <details>
@@ -158,6 +159,7 @@
 - **WorldReel** · [[Paper]](https://arxiv.org/pdf/2512.07821) [[Code]](https://github.com/bshfang/WorldReel)
 - **DimensionX** · [[Paper]](https://arxiv.org/pdf/2411.04928) [[Code]](https://github.com/wenqsun/DimensionX)
 - **Context-as-Memory** · [[Paper]](https://arxiv.org/pdf/2506.03141) [[Code]](#)
+- **ShotStream** · [[Paper]](https://arxiv.org/pdf/2603.25746) [[Code]](https://github.com/KlingAIResearch/ShotStream)
 </details>
 
 #### navigation video generation
@@ -173,6 +175,7 @@
 - **Hunyuan-Worldplay** · [[Paper]](https://3d-models.hunyuan.tencent.com/world/world1_5/HYWorld_1.5_Tech_Report.pdf) [[Code]](https://github.com/Tencent-Hunyuan/HY-WorldPlay)
 - **Matrix-Game** · [[Paper]](https://arxiv.org/pdf/2506.18701) [[Code]](https://github.com/SkyworkAI/Matrix-Game/tree/main)
 - **Matrix-Game 2.0** · [[Paper]](https://arxiv.org/pdf/2508.13009) [[Code]](https://github.com/SkyworkAI/Matrix-Game/tree/main/Matrix-Game-2)
+- **Matrix-Game 3.0** · [[Paper]](#) [[Code]](https://github.com/SkyworkAI/Matrix-Game/tree/main/Matrix-Game-3)
 - **Longvie-2** · [[Paper]](https://arxiv.org/pdf/2512.13604) [[Code]](https://github.com/Vchitect/LongVie)
 - **Hunyuan-Game** · [[Paper]](https://arxiv.org/pdf/2505.14135) [[Code]](#)
 - **Yume1.5** · [[Paper]](https://arxiv.org/pdf/2512.22096) [[Code]](https://github.com/stdstu12/YUME)
@@ -197,6 +200,7 @@
 <details>
 <summary><strong> general video generation model </strong></summary>
 
+- **Helios** · [[Paper]](https://arxiv.org/pdf/2603.04379) [[Code]](https://github.com/PKU-YuanGroup/Helios)
 - **veo-3** · [[Paper]](https://arxiv.org/pdf/2509.20328) [[Code]](#)
 - **wan-2.5** · [[Paper]](https://arxiv.org/pdf/2503.20314) [[Code]](https://github.com/Wan-Video/Wan2.1)
 - **Waver** · [[Paper]](https://arxiv.org/pdf/2508.15761) [[Code]](https://github.com/FoundationVision/Waver)
@@ -315,6 +319,9 @@
 - **LoGeR** · [[Paper]](https://arxiv.org/pdf/2603.03269) [[Code]](https://github.com/Junyi42/LoGeR)
 - **Utonia** · [[Paper]](https://arxiv.org/pdf/2603.03283) [[Code]](https://github.com/Pointcept/Utopia)
 - **inspatio-world** · [[Paper]](#) [[Code]](https://github.com/inspatio/inspatio-world)
+- **DROID-W** · [[Paper]](https://arxiv.org/pdf/2603.19076) [[Code]](https://github.com/MoyangLi00/DROID-W)
+- **VGGT-World** · [[Paper]](https://arxiv.org/pdf/2603.12655) [[Code]](#)
+- **Marble 1.1 Plus** · [[Paper]](https://radiancefields.com/world-labs-releases-marble-1.1-and-marble-1.1-plus) [[Code]](#)
 </details>
 
 #### 4D generation
@@ -345,6 +352,25 @@
 - **Latticeworld** · [[Paper]](https://arxiv.org/pdf/2509.05263) [[Code]](#)
 - **Worldlab** · [[Paper]](#) [[Code]](https://github.com/Twynzen/worldlab.git)
 - **WorldGrow** · [[Paper]](https://arxiv.org/abs/2510.21682) [[Code]](https://github.com/world-grow/WorldGrow)
+</details>
+
+#### Joint-Embedding Predictive Architecture (JEPA)
+
+<details>
+<summary><strong> JEPA Family Models </strong></summary>
+
+- **I-JEPA** · [[Paper]](https://arxiv.org/pdf/2301.08243) [[Code]](https://github.com/facebookresearch/ijepa)
+- **MC-JEPA** · [[Paper]](https://arxiv.org/pdf/2307.12698) [[Code]](#)
+- **V-JEPA** · [[Paper]](https://arxiv.org/pdf/2404.08471) [[Code]](https://github.com/facebookresearch/jepa)
+- **Point-JEPA** · [[Paper]](https://arxiv.org/pdf/2404.16432) [[Code]](https://github.com/Ayumu-J-S/Point-JEPA)
+- **3D-JEPA** · [[Paper]](https://arxiv.org/pdf/2409.15803) [[Code]](#)
+- **ACT-JEPA** · [[Paper]](https://arxiv.org/pdf/2501.14622) [[Code]](#)
+- **V-JEPA 2** · [[Paper]](https://arxiv.org/pdf/2506.09985) [[Code]](https://github.com/facebookresearch/vjepa2)
+- **Audio-JEPA** · [[Paper]](https://arxiv.org/pdf/2507.02915) [[Code]](https://github.com/LudovicTuncay/Audio-JEPA)
+- **LeJEPA** · [[Paper]](https://arxiv.org/pdf/2511.08544) [[Code]](https://github.com/galilai-group/lejepa)
+- **Causal-JEPA** · [[Paper]](https://arxiv.org/pdf/2602.11389) [[Code]](https://github.com/galilai-group/cjepa)
+- **LeWorldModel** · [[Paper]](https://arxiv.org/pdf/2603.19312v1) [[Code]](https://github.com/lucas-maes/le-wm)
+- **Think-JEPA** · [[Paper]](https://arxiv.org/pdf/2603.22281) [[Code]](#)
 </details>
 
 ---
@@ -383,6 +409,7 @@
 
 - **pi0** · [[Paper]](https://arxiv.org/pdf/2410.24164) [[Code]](https://github.com/Physical-Intelligence/openpi)
 - **pi0.5** · [[Paper]](https://arxiv.org/pdf/2504.16054) [[Code]](https://github.com/Physical-Intelligence/openpi)
+- **pi0.6**  · [[Ckpt]](https://huggingface.co/exla-ai/openpie-0.6)
 - **gigabrain** · [[Paper]](https://arxiv.org/pdf/2510.19430) [[Code]](https://github.com/open-gigaai/giga-brain-0)
 - **wall-oss** · [[Paper]](https://arxiv.org/pdf/2509.11766) [[Code]](https://github.com/X-Square-Robot/wall-x)
 - **spirit-v1.5** · [[Paper]](#) [[Code]](https://github.com/Spirit-AI-Team/spirit-v1.5)
@@ -400,6 +427,7 @@
 - **OSVI-WM** · [[Paper]](https://arxiv.org/pdf/2505.20425) [[Code]](#)
 - **LPWM** · [[Paper]](https://arxiv.org/pdf/2603.04553) [[Code]](https://github.com/taldatech/lpwm)
 - **ACoT-VLA** · [[Paper]](https://arxiv.org/pdf/2601.11404) [[Code]](https://github.com/AgibotTech/ACoT-VLA)
+- **GigaWorld-Policy** · [[Paper]](https://arxiv.org/pdf/2603.17240) [[Code]](https://github.com/GigaAI-research/GigaWorld-Policy)
 </details>
 
 <details>
@@ -411,6 +439,7 @@
 - **lingbot-va** · [[Paper]](https://arxiv.org/pdf/2601.21998) [[Code]](https://github.com/Robbyant/lingbot-va)
 - **WoW** · [[Paper]](https://arxiv.org/pdf/2509.22642) [[Code]](https://github.com/wow-world-model/wow-world-model)
 - **Cosmos** · [[Paper]](https://arxiv.org/pdf/2501.03575) [[Code]](https://github.com/nvidia-cosmos/cosmos-predict1)
+- **Hand2World** · [[Paper]](https://arxiv.org/abs/2602.09600) [[Code]](https://github.com/NTUYWANG103/Hand2World)
 </details>
 
 <details>
@@ -458,6 +487,8 @@
 - **CityWalk** · [[Paper]](https://arxiv.org/pdf/2411.17820) [[Access]](https://huggingface.co/datasets/ai4ce/CityWalker)
 - **GameFactory-Dataset** · [[Paper]](#) [[Access]](https://huggingface.co/datasets/KlingTeam/GameFactory-Dataset)
 - **Look and Tell** · [[Paper]](https://arxiv.org/pdf/2510.22672) [[Access]](https://huggingface.co/datasets/annadeichler/KTH-ARIA-referential)
+- **WildWorld** · [[Paper]](https://arxiv.org/pdf/2603.23497) [[Code]](https://github.com/ShandaAI/WildWorld)
+- **Sekai** · [[Paper]](https://arxiv.org/pdf/2506.15675) [[Code]](https://github.com/Lixsp11/sekai-codebase)
 </details>
 
 <details>
@@ -494,6 +525,7 @@
 
 - **WorldBench** · [[Paper]](https://arxiv.org/pdf/2504.00983) [[Code]](https://github.com/haoyi-duan/WorldScore)
 - **CameraBench** · [[Paper]](https://arxiv.org/pdf/2504.15376) [[Code]](https://github.com/sy77777en/CameraBench)
+- **Omni-WorldBench** · [[Paper]](https://arxiv.org/pdf/2603.22212) [[Code]](https://github.com/AMAP-ML/Omni-WorldBench)
 </details>
 
 <details>
