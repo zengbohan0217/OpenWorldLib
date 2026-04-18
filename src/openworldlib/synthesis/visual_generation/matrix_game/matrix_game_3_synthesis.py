@@ -1,5 +1,7 @@
 import os
 import sys
+import logging
+import warnings
 from pathlib import Path
 from types import SimpleNamespace
 from typing import Optional, List, Any, Dict
@@ -41,10 +43,28 @@ class MatrixGame3Synthesis(BaseSynthesis):
         pretrained_model_path: str,
         device: str = "cuda",
         code_dir: Optional[str] = None,
+        visualize_warning: bool = False,
         **kwargs,
     ) -> "MatrixGame3Synthesis":
         if not pretrained_model_path:
             raise ValueError("MatrixGame3Synthesis requires `pretrained_model_path`.")
+
+        if not visualize_warning:
+            warnings.filterwarnings(
+                "ignore",
+                message=r"`torch\.cuda\.amp\.autocast\(args\.\.\.\)` is deprecated\. Please use `torch\.amp\.autocast\('cuda', args\.\.\.\)` instead\.",
+                category=FutureWarning,
+            )
+            warnings.filterwarnings(
+                "ignore",
+                message=r".*torch\.load.*weights_only=False.*",
+                category=FutureWarning,
+            )
+            logging.getLogger("torch._dynamo").setLevel(logging.ERROR)
+            logging.getLogger("torch._inductor.autotune_process").setLevel(logging.WARNING)
+            logging.getLogger("torch._inductor").setLevel(logging.WARNING)
+            logging.getLogger("diffusers").setLevel(logging.ERROR)
+            logging.getLogger("transformers").setLevel(logging.ERROR)
 
         root = Path(__file__).resolve().parents[5]
         default_code_dir = (
@@ -86,6 +106,8 @@ class MatrixGame3Synthesis(BaseSynthesis):
             )
             print(f"[MatrixGame3Synthesis] Model downloaded to: {model_root}")
 
+        print("[MatrixGame3Synthesis] Loading model weights, please wait...", flush=True)
+
         # Ensure the upstream code is importable.
         if code_dir not in sys.path:
             sys.path.insert(0, code_dir)
@@ -101,6 +123,7 @@ class MatrixGame3Synthesis(BaseSynthesis):
         args = SimpleNamespace(
             output_dir=str(Path.cwd() / "output" / "matrix_game_3"),
             ckpt_dir=model_root,
+            visualize_warning=bool(visualize_warning),
             size="704*1280",
             save_name="matrix_game_3",
             num_iterations=12,
@@ -158,6 +181,7 @@ class MatrixGame3Synthesis(BaseSynthesis):
         use_base_model: bool = False,
         save_video: bool = True,
         return_result: bool = False,
+        visualize_warning: bool = False,
         **kwargs,
     ) -> Any:
         out_dir = Path(output_dir or (Path.cwd() / "output" / "matrix_game_3"))
@@ -180,8 +204,14 @@ class MatrixGame3Synthesis(BaseSynthesis):
         args.vae_type = str(vae_type)
         args.use_int8 = bool(use_int8)
         args.verify_quant = bool(verify_quant)
+        args.visualize_warning = bool(visualize_warning)
 
         self.pipeline.fa_version = str(fa_version)
+
+        if not visualize_warning:
+            logging.getLogger("torch._dynamo").setLevel(logging.ERROR)
+            logging.getLogger("torch._inductor.autotune_process").setLevel(logging.WARNING)
+            logging.getLogger("torch._inductor").setLevel(logging.WARNING)
 
         try:
             h_str, w_str = str(size).split("*")

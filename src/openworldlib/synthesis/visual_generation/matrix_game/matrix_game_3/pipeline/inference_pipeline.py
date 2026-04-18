@@ -39,6 +39,7 @@ from ..utils.cam_utils import (
 from ..utils.utils import get_data, build_plucker_from_c2ws, build_plucker_from_pose
 from .vae_worker import start_vae_worker_process
 
+
 class MatrixGame3Pipeline:
     def __init__(
         self,
@@ -202,9 +203,10 @@ class MatrixGame3Pipeline:
                         self.vae_ack_queue,
                         self.vae_done_event,
                     ) = start_vae_worker_process(self.output_dir, worker_gpu_id, meta)
-                    print(f"\n[Rank 0] Async VAE Worker started on GPU {worker_gpu_id} (PID: {self.vae_process.pid})\n", flush=True)
+                    if self.rank == 0 and getattr(args, "visualize_warning", False):
+                        print(f"\n[Rank 0] Async VAE Worker started on GPU {worker_gpu_id} (PID: {self.vae_process.pid})\n", flush=True)
             else:
-                if self.rank == 0:
+                if self.rank == 0 and getattr(args, "visualize_warning", False):
                     print(f"\n[Rank 0] Running in SERIAL mode (Diffusion and VAE interleaved)\n", flush=True)
 
     def _configure_model(self, model, use_sp, dit_fsdp, shard_fn,
@@ -275,9 +277,10 @@ class MatrixGame3Pipeline:
                     flush=True,
                 )
 
-        print("🚀 Flash Attention Configuration:", flush=True)
-        print(f"  Requested: {requested_fa if requested_fa else 'Default (3)'}", flush=True)
-        print(f"  Actual:    {actual_fa}", flush=True)
+        if self.rank == 0 and getattr(args, "visualize_warning", False):
+            print("🚀 Flash Attention Configuration:", flush=True)
+            print(f"  Requested: {requested_fa if requested_fa else 'Default (3)'}", flush=True)
+            print(f"  Actual:    {actual_fa}", flush=True)
 
 
     def generate(self,
@@ -373,12 +376,12 @@ class MatrixGame3Pipeline:
             total_frames = 0
             all_latents_list = []
             all_videos_list = []
-            
+
             for clip_idx in range(num_iterations):
                 first_clip = (clip_idx == 0)
-                if self.rank == 0:
+                if self.rank == 0 and getattr(args, "visualize_warning", False):
                     print(f" Iteration {clip_idx + 1}/{num_iterations}", flush=True)
-                
+
                 def align_frame_to_block(frame_idx):
                     return (frame_idx - 1) // 4 * 4 + 1 if frame_idx > 0 else 1
 
@@ -393,7 +396,7 @@ class MatrixGame3Pipeline:
                 tgt_len = (first_clip_frame - 1) // 4 + 1 if first_clip else (clip_frame // 4)
                 tgt_indices = np.linspace(0 if first_clip else current_start_frame_idx + 3, current_end_frame_idx - 1, tgt_len)
                 c2ws_chunk_gpu = c2ws_chunk.to(device=self.device)
-                
+
                 plucker = build_plucker_from_c2ws(
                     c2ws_chunk_gpu,
                     src_indices,
@@ -431,14 +434,14 @@ class MatrixGame3Pipeline:
 
                     if dist.is_initialized():
                         dist.broadcast_object_list(selected_index, src=0)
-                    
+
                     memory_pluckers = []
                     latent_idx = []
                     for mem_idx, reference_idx in zip(selected_index, selected_index_base):
 
                         l_idx = get_latent_idx(mem_idx)
                         latent_idx.append(l_idx)
-                        
+
                         mem_idx_aligned = align_frame_to_block(mem_idx)
                         mem_block = extrinsics_all[mem_idx_aligned:mem_idx_aligned + 4]
                         mem_src = np.linspace(mem_idx_aligned, mem_idx_aligned + 3, mem_block.shape[0])
@@ -540,7 +543,12 @@ class MatrixGame3Pipeline:
                     else:
                         noise_pred = self.model(**model_kwargs)
 
-                    if args is not None and getattr(args, 'use_int8', False) and getattr(args, 'verify_quant', False):
+                    if (
+                        args is not None
+                        and getattr(args, "use_int8", False)
+                        and getattr(args, "verify_quant", False)
+                        and getattr(args, "visualize_warning", False)
+                    ):
                         if _ == 0 and self.rank == 0:
                             print(f"\n[Verification] Step {_}: noise_pred stats: mean={noise_pred.mean().item():.6f}, std={noise_pred.std().item():.6f}", flush=True)
 

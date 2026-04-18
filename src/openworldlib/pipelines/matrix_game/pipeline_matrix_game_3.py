@@ -1,5 +1,7 @@
 from pathlib import Path
 from typing import Optional, List, Any, Union
+import logging
+import warnings
 
 import numpy as np
 import torch
@@ -10,6 +12,7 @@ from diffusers.utils import export_to_video
 from ...operators.matrix_game_3_operator import MatrixGame3Operator
 from ...synthesis.visual_generation.matrix_game.matrix_game_3_synthesis import MatrixGame3Synthesis
 from ...memories.visual_synthesis.matrix_game.matrix_game_3_memory import MatrixGame3Memory
+
 
 class MatrixGame3Pipeline:
     """Matrix-Game-3 pipeline following OpenWorldLib (Operator + Synthesis + Memory)."""
@@ -34,6 +37,7 @@ class MatrixGame3Pipeline:
         device: str = "cuda",
         required_components: Optional[dict] = None,
         code_dir: Optional[str] = None,
+        visualize_warning: bool = False,
         **kwargs,
     ) -> "MatrixGame3Pipeline":
         if not model_path:
@@ -43,6 +47,7 @@ class MatrixGame3Pipeline:
             pretrained_model_path=model_path,
             device=device,
             code_dir=code_dir,
+            visualize_warning=visualize_warning,
         )
         operators = MatrixGame3Operator()
         memory_module = MatrixGame3Memory()
@@ -86,12 +91,27 @@ class MatrixGame3Pipeline:
         save_video: bool = True,
         return_result: bool = False,
         video_save_path: Optional[Union[str, Path]] = None,
+        visualize_warning: bool = False,
         **kwargs,
     ) -> Any:
         if not isinstance(images, Image.Image):
             raise ValueError("MatrixGame3Pipeline expects `images` to be a PIL.Image.")
         if self.synthesis_model is None:
             raise RuntimeError("MatrixGame3Pipeline.synthesis_model is not initialized.")
+        if not visualize_warning:
+            warnings.filterwarnings(
+                "ignore",
+                message=r"`torch\.cuda\.amp\.autocast\(args\.\.\.\)` is deprecated\. Please use `torch\.amp\.autocast\('cuda', args\.\.\.\)` instead\.",
+                category=FutureWarning,
+            )
+            warnings.filterwarnings(
+                "ignore",
+                message=r".*torch\.load.*weights_only=False.*",
+                category=FutureWarning,
+            )
+            logging.getLogger("torch._dynamo").setLevel(logging.ERROR)
+            logging.getLogger("torch._inductor.autotune_process").setLevel(logging.WARNING)
+            logging.getLogger("torch._inductor").setLevel(logging.WARNING)
 
         processed_inputs = self.process(images, interactions=interactions)
 
@@ -121,6 +141,7 @@ class MatrixGame3Pipeline:
             use_base_model=use_base_model,
             save_video=save_video,
             return_result=need_payload,
+            visualize_warning=visualize_warning,
             **kwargs,
         )
 
@@ -171,4 +192,3 @@ class MatrixGame3Pipeline:
         if current_image is None:
             raise ValueError("No image in storage. Provide 'images' first.")
         return self.__call__(images=current_image, interactions=interactions, prompt=prompt, **kwargs)
-
