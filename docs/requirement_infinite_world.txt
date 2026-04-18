@@ -1,0 +1,16 @@
+Infinite-World runtime notes
+============================
+
+1. Start from the repository default environment:
+   bash scripts/setup/default_install.sh
+
+2. Install a flash-attn build that matches your local PyTorch/CUDA environment.
+   Infinite-World hard-requires flash_attn at runtime and will raise an ImportError
+   from `InfiniteWorldSynthesis.from_pretrained()` if it is missing.
+
+3. Use a single top-level model path when loading the pipeline:
+   - Hugging Face repo id: MeiGen-AI/Infinite-World
+   - or a local snapshot directory with the expected checkpoints/models layout
+
+4. Optional component overrides are supported through `required_components`, but
+   the normal test and example flow should only need the top-level model path.

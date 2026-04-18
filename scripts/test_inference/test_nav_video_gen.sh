@@ -6,6 +6,7 @@ show_help() {
     echo ""
     echo "Available methods:"
     echo "  - matrix-game-2        : Run test_matrix_game_2.py"
+    echo "  - infinite-world       : Run test_infinite_world.py"
     echo "  - hunyuan-gamecraft    : Run test_hunyuan_gamecraft.py"
     echo "  - hunyuanworld-voyager : Run test_hunyuan_world_voyager.py"
     echo "  - astra                : Run test_astra.py"
@@ -28,6 +29,10 @@ case $METHOD_NAME in
     "matrix-game-2")
         echo "Executing: matrix_game_2..."
         CUDA_VISIBLE_DEVICES=0 python test/test_matrix_game_2.py
+        ;;
+    "infinite-world")
+        echo "Executing: infinite_world..."
+        CUDA_VISIBLE_DEVICES=0 python test/test_infinite_world.py
         ;;
     "hunyuan-gamecraft")
         echo "Executing: hunyuan_gamecraft..."

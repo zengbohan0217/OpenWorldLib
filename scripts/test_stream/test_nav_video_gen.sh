@@ -6,6 +6,7 @@ show_help() {
     echo ""
     echo "Available methods:"
     echo "  - matrix-game-2        : Run test_matrix_game_2.py"
+    echo "  - infinite-world       : Run test_infinite_world_stream.py"
     echo ""
 }
 
@@ -23,6 +24,10 @@ case $METHOD_NAME in
     "matrix-game-2")
         echo "Executing: matrix_game_2..."
         CUDA_VISIBLE_DEVICES=0 python test_stream/test_matrix_game_2_stream.py
+        ;;
+    "infinite-world")
+        echo "Executing: infinite_world..."
+        CUDA_VISIBLE_DEVICES=0 python test_stream/test_infinite_world_stream.py
         ;;
     *)
         # If the input does not match any method, show an error message

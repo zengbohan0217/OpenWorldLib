@@ -68,6 +68,13 @@ In this document, we list the installation requirements and installation scripts
     <td><code>bash scripts/setup/default_install.sh</code></td>
   </tr>
   <tr>
+    <td align="center">Infinite-World</td>
+    <td align="center">3.10</td>
+    <td align="center">12.1</td>
+    <td>PyTorch 2.5.1, flash-attn</td>
+    <td><code>bash scripts/setup/default_install.sh</code><br><code>see docs/requirement_infinite_world.txt</code></td>
+  </tr>
+  <tr>
     <td colspan="5" align="center"><b>🎨 3D Scene Generation</b></td>
   </tr>
   <tr>
