@@ -26,6 +26,14 @@ def load_matrix_game2_pipeline(model_path: Union[str, Dict], device: str):
     )
 
 
+def load_matrix_game3_pipeline(model_path: Union[str, Dict], device: str):
+    from openworldlib.pipelines.matrix_game.pipeline_matrix_game_3 import MatrixGame3Pipeline
+    return MatrixGame3Pipeline.from_pretrained(
+        model_path=_resolve_path(model_path, "pretrained_model_path"),
+        device=device,
+    )
+
+
 def load_hunyuan_game_craft_pipeline(model_path: Union[str, Dict], device: str):
     from openworldlib.pipelines.hunyuan_world.pipeline_hunyuan_game_craft import HunyuanGameCraftPipeline
     return HunyuanGameCraftPipeline.from_pretrained(
@@ -124,6 +132,8 @@ def load_cosmos_predict2p5_pipeline(model_path: Union[str, Dict], device: str, t
 video_gen_pipe = {
     "matrix-game2": load_matrix_game2_pipeline,
     "infinite-world": load_infinite_world_pipeline,
+    "matrix-game3": load_matrix_game3_pipeline,
+    "matrix-game-3": load_matrix_game3_pipeline,
     "wan2p2": load_wan2p2_pipeline,
     "hunyuan-game-craft": load_hunyuan_game_craft_pipeline,
     "lingbot-world": load_lingbot_world_pipeline,

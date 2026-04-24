@@ -241,9 +241,9 @@ User Input
   howpublished = {\url{https://github.com/OpenDCAI/OpenWorldLib}}
 } -->
 ```bibtex
-@article{dataflow2026openworldlib,
+@article{team2026openworldlib,
   title={OpenWorldLib: A Unified Codebase and Definition of Advanced World Models},
-  author={DataFlow Team and others},
+  author={Team, DataFlow and Zeng, Bohan and Hua, Daili and Zhu, Kaixin and Dai, Yifan and Li, Bozhou and Wang, Yuran and Tong, Chengzhuo and Yang, Yifan and Chang, Mingkun and others},
   journal={arXiv preprint arXiv:2604.04707},
   year={2026}
 }

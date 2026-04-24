@@ -15,10 +15,21 @@ from ..synthesis.visual_generation.hunyuan_world.hunyuan_worldplay.generate_cust
 
 
 class HunyuanWorldPlayOperator(BaseOperator):
-    def __init__(self, operation_types=None, interaction_template=None):
+    def __init__(
+        self,
+        operation_types=None,
+        interaction_template=None,
+        *,
+        forward_speed: float = 0.08,
+        yaw_speed_deg: float = 3.0,
+        pitch_speed_deg: float = 3.0,
+    ):
         if operation_types is None:
             operation_types = ["action_instruction"]
         super().__init__(operation_types=operation_types)
+        self.forward_speed = forward_speed
+        self.yaw_speed_deg = yaw_speed_deg
+        self.pitch_speed_deg = pitch_speed_deg
         self.interaction_template = interaction_template or [
             "forward",
             "backward",
@@ -117,9 +128,9 @@ class HunyuanWorldPlayOperator(BaseOperator):
         return all(item in self.interaction_template for item in interaction)
 
     def _actions_to_pose_json(self, actions: list[str]) -> dict:
-        forward_speed = 0.08
-        yaw_speed = np.deg2rad(3)
-        pitch_speed = np.deg2rad(3)
+        forward_speed = self.forward_speed
+        yaw_speed = np.deg2rad(self.yaw_speed_deg)
+        pitch_speed = np.deg2rad(self.pitch_speed_deg)
         motions: list[dict] = []
         for action in actions:
             move = {}

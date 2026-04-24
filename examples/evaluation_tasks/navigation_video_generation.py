@@ -48,7 +48,16 @@ def reference_func(
 
     output_path = input_data_info.get("output_path", None)
     fps = int(input_data_info.get("fps", 12))
-    output_video = pipe_infer(pipe, input_image, interaction_signal, output_path, fps)
+    # Some pipelines (e.g., Matrix-Game-3) require a text prompt.
+    prompt = input_data_info.get("prompt") or input_data_info.get("scene_description")
+    output_video = pipe_infer(
+        pipe,
+        input_image,
+        interaction_signal,
+        output_path,
+        fps,
+        prompt=prompt,
+    )
     if output_path is not None:
         return {output_key: str(output_path)}
     return {output_key: output_video}

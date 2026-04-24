@@ -7,6 +7,7 @@ show_help() {
     echo "Available methods:"
     echo "  - matrix-game-2        : Run test_matrix_game_2.py"
     echo "  - infinite-world       : Run test_infinite_world.py"
+    echo "  - matrix-game-3        : Run test_matrix_game_3.py (uses default HF repo id by default)"
     echo "  - hunyuan-gamecraft    : Run test_hunyuan_gamecraft.py"
     echo "  - hunyuanworld-voyager : Run test_hunyuan_world_voyager.py"
     echo "  - astra                : Run test_astra.py"
@@ -14,6 +15,16 @@ show_help() {
     echo "  - lingbot-world        : Run test_lingbot_world.py"
     echo ""
 }
+
+PYTHON_BIN=${PYTHON_BIN:-python}
+if ! command -v "$PYTHON_BIN" >/dev/null 2>&1; then
+    if command -v python3 >/dev/null 2>&1; then
+        PYTHON_BIN=python3
+    else
+        echo "Error: neither 'python' nor 'python3' is available in PATH."
+        exit 1
+    fi
+fi
 
 # Check if an argument is provided
 if [ -z "$1" ]; then
@@ -28,7 +39,11 @@ METHOD_NAME=$1
 case $METHOD_NAME in
     "matrix-game-2")
         echo "Executing: matrix_game_2..."
-        CUDA_VISIBLE_DEVICES=0 python test/test_matrix_game_2.py
+        CUDA_VISIBLE_DEVICES=0 "$PYTHON_BIN" test/test_matrix_game_2.py
+        ;;
+    "matrix-game-3"|"matrix-game3")
+        echo "Executing: matrix_game_3..."
+        CUDA_VISIBLE_DEVICES=0 "$PYTHON_BIN" test/test_matrix_game_3.py
         ;;
     "infinite-world")
         echo "Executing: infinite_world..."
@@ -40,15 +55,15 @@ case $METHOD_NAME in
         ;;
     "hunyuanworld-voyager")
         echo "Executing: hunyuan_world_voyager..."
-        CUDA_VISIBLE_DEVICES=0 python test/test_hunyuan_world_voyager.py
+        CUDA_VISIBLE_DEVICES=0 "$PYTHON_BIN" test/test_hunyuan_world_voyager.py
         ;;
     "astra")
         echo "Executing: astra..."
-        CUDA_VISIBLE_DEVICES=0 python test/test_astra.py
+        CUDA_VISIBLE_DEVICES=0 "$PYTHON_BIN" test/test_astra.py
         ;;
     "yume-1p5")
         echo "Executing: yume..."
-        CUDA_VISIBLE_DEVICES=0 python test/test_yume_1p5.py
+        CUDA_VISIBLE_DEVICES=0 "$PYTHON_BIN" test/test_yume_1p5.py
         ;;
     "lingbot-world")
         echo "Executing: lingbot_world..."

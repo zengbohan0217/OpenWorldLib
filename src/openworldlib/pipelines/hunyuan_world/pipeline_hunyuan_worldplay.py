@@ -1,5 +1,6 @@
 from typing import Optional, Generator, List
 import torch
+from PIL import Image
 from ..pipeline_utils import PipelineABC
 from ...operators.hunyuan_worldplay_operator import HunyuanWorldPlayOperator
 from ...synthesis.visual_generation.hunyuan_world.hunyuan_worldplay_synthesis import HunyuanWorldPlaySynthesis
@@ -38,6 +39,9 @@ class HunyuanWorldPlayPipeline(PipelineABC):
         overlap_group_offloading: bool = True,
         init_infer_state: bool = True,
         infer_state_kwargs: Optional[dict] = None,
+        forward_speed: float = 0.08,
+        yaw_speed_deg: float = 3.0,
+        pitch_speed_deg: float = 3.0,
         **kwargs
     ) -> 'HunyuanWorldPlayPipeline':
         """
@@ -90,7 +94,11 @@ class HunyuanWorldPlayPipeline(PipelineABC):
             action_ckpt=model_path,
             **kwargs
         )
-        operators = HunyuanWorldPlayOperator()
+        operators = HunyuanWorldPlayOperator(
+            forward_speed=forward_speed,
+            yaw_speed_deg=yaw_speed_deg,
+            pitch_speed_deg=pitch_speed_deg,
+        )
         
         return cls(
             synthesis_model=synthesis_model,
@@ -147,6 +155,7 @@ class HunyuanWorldPlayPipeline(PipelineABC):
         self,
         *,
         prompt: str,
+        images: Optional[Image.Image] = None,
         image_path: Optional[str] = None,
         interactions: Optional[str] = None,
         num_frames: int = 125,
@@ -165,14 +174,18 @@ class HunyuanWorldPlayPipeline(PipelineABC):
         model_type: str = "ar",
         user_height: Optional[int] = None,
         user_width: Optional[int] = None,
+        forward_speed: Optional[float] = None,
+        yaw_speed_deg: Optional[float] = None,
+        pitch_speed_deg: Optional[float] = None,
         **kwargs
     ):
         """
         Pipeline 调用入口
-        
+
         Args:
             prompt: 文本提示
-            image_path: 图像路径
+            images: 参考图像（PIL.Image）
+            image_path: 参考图像路径（如果 images 未提供则使用）
             pose: 相机轨迹（如 "w-10, right-10, d-11"）
             aspect_ratio: 宽高比
             num_frames: 帧数
@@ -190,10 +203,28 @@ class HunyuanWorldPlayPipeline(PipelineABC):
             user_height: 用户指定高度
             user_width: 用户指定宽度
             **kwargs: 其他参数
-            
+
         Returns:
             HunyuanVideoPipelineOutput: 包含生成的视频帧
         """
+        if forward_speed is not None:
+            self.operators.forward_speed = forward_speed
+        if yaw_speed_deg is not None:
+            self.operators.yaw_speed_deg = yaw_speed_deg
+        if pitch_speed_deg is not None:
+            self.operators.pitch_speed_deg = pitch_speed_deg
+
+        # Handle image input: prefer images, fallback to image_path
+        if images is not None:
+            input_image = images
+        elif image_path is not None:
+            try:
+                input_image = Image.open(image_path).convert("RGB")
+            except Exception as e:
+                raise ValueError(f"Cannot load image from image_path: {image_path}") from e
+        else:
+            raise ValueError("Either images or image_path must be provided")
+
         video_length = num_frames
         pose_value = interactions if interactions is not None else pose
         if pose_value is None:
@@ -203,7 +234,7 @@ class HunyuanWorldPlayPipeline(PipelineABC):
             print(f"video_length {video_length} != inferred_video_length {inferred_video_length}, auto setting")
             video_length = inferred_video_length
         processed = self.process(
-            input_=image_path,
+            input_=input_image,
             interaction=pose_value,
             video_length=video_length,
         )
