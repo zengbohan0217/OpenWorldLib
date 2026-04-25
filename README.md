@@ -1,6 +1,6 @@
 <div align="center" markdown="1">
 
-<img src="https://github.com/user-attachments/assets/1935c89a-76cb-4edc-a6ac-0c3658d347f6" alt="openworldlib_logo" width="90%" />
+<img src="https://github.com/user-attachments/assets/0521e467-681f-42bd-853c-bee16a309e9d" alt="openworldlib_logo" width="90%" />
 
 #### Welcome to join us open-source world model project ! <!-- omit in toc -->
 ---
