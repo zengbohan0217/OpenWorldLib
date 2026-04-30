@@ -12,6 +12,7 @@ show_help() {
     echo "  - hunyuanworld-voyager : Run test_hunyuan_world_voyager.py"
     echo "  - astra                : Run test_astra.py"
     echo "  - yume-1p5             : Run test_yume_1p5.py"
+    echo "  - yume                 : Run test_yume.py"
     echo "  - lingbot-world        : Run test_lingbot_world.py"
     echo ""
 }
@@ -61,9 +62,13 @@ case $METHOD_NAME in
         echo "Executing: astra..."
         CUDA_VISIBLE_DEVICES=0 "$PYTHON_BIN" test/test_astra.py
         ;;
-    "yume-1p5")
+    "yume")
         echo "Executing: yume..."
-        CUDA_VISIBLE_DEVICES=0 "$PYTHON_BIN" test/test_yume_1p5.py
+        CUDA_VISIBLE_DEVICES=0 "$PYTHON_BIN" test/test_yume.py
+        ;;
+    "yume-1p5")
+        echo "Executing: yume1.5..."
+        torchrun --nproc_per_node=2 test/test_yume_1p5.py
         ;;
     "lingbot-world")
         echo "Executing: lingbot_world..."
