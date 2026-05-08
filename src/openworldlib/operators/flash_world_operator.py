@@ -121,9 +121,9 @@ def _orientation_in_place_at_t(
     """Camera fixed; orientation interpolated over segment (t in [0, 1])."""
     t = float(np.clip(t, 0.0, 1.0))
     if action == "camera_l":
-        return _rotate_yaw_world(quat_start, -t * _YAW_PER_SEGMENT)
-    if action == "camera_r":
         return _rotate_yaw_world(quat_start, t * _YAW_PER_SEGMENT)
+    if action == "camera_r":
+        return _rotate_yaw_world(quat_start, -t * _YAW_PER_SEGMENT)
     if action == "camera_up":
         return _rotate_pitch_local(quat_start, t * _PITCH_PER_SEGMENT)
     if action == "camera_down":
