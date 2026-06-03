@@ -19,7 +19,6 @@ import numpy as np
 import torch
 import torch.nn.functional as F
 import yaml
-from diffusers.models.autoencoders import AutoencoderKLLTX2Video
 from einops import rearrange
 from huggingface_hub import snapshot_download
 from PIL import Image
@@ -247,7 +246,7 @@ class SanaWMSynthesis(BaseSynthesis):
     def __init__(
         self,
         config: InferenceConfig,
-        vae: AutoencoderKLLTX2Video,
+        vae,
         text_encoder: torch.nn.Module,
         tokenizer: Any,
         model: torch.nn.Module,
@@ -330,25 +329,16 @@ class SanaWMSynthesis(BaseSynthesis):
         # Ensure the vae_pretrained path points to the local root
         config.vae.vae_pretrained = str(root)
 
-        # ── 3. Build VAE ───────────────────────────────────────────────
-        vae_dtype = torch.bfloat16
+        # codeflicker-refactor: ltx-base-6/2vvzxiatcoizx40gv1il
+        # Use base_models ltx2_vae.get_vae() for cross-model reuse.
         print("[SanaWMSynthesis] Loading VAE (LTX-2)...")
-        vae = AutoencoderKLLTX2Video.from_pretrained(
-            str(root),
-            subfolder="vae",
-            torch_dtype=vae_dtype,
+        vae = get_vae(
+            model_path=str(root),
+            device=self.device,
+            dtype=torch.bfloat16,
+            tile_sample_stride_num_frames=getattr(config.vae, "tile_sample_stride_num_frames", 64),
+            tile_sample_min_num_frames=getattr(config.vae, "tile_sample_min_num_frames", 96),
         )
-        if hasattr(vae, "enable_tiling"):
-            vae.enable_tiling()
-        if hasattr(vae, "use_framewise_encoding"):
-            vae.use_framewise_encoding = True
-            vae.use_framewise_decoding = True
-            vae.tile_sample_stride_num_frames = getattr(
-                config.vae, "tile_sample_stride_num_frames", 64
-            )
-            vae.tile_sample_min_num_frames = getattr(
-                config.vae, "tile_sample_min_num_frames", 96
-            )
         if offload_vae:
             vae.to("cpu")
         else:
