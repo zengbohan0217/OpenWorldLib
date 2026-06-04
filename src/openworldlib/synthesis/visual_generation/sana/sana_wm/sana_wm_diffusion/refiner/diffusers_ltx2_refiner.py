@@ -24,7 +24,7 @@ All symbols are re-exported from the canonical base_models implementation at:
 This file intentionally contains NO logic — it only forwards imports.
 """
 
-from openworldlib.base_models.diffusion_model.video.ltx2_refiner import (
+from .......base_models.diffusion_model.video.ltx2_refiner import (
     DiffusersLTX2Refiner,
     STAGE_2_DISTILLED_SIGMA_VALUES,
     _empty_cuda_cache,
