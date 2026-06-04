@@ -44,9 +44,9 @@ from sana_wm_diffusion.model.builder import (
     vae_decode,
     vae_encode,
 )
-from openworldlib.base_models.diffusion_model.video.ltx2_vae import get_vae
+from .....base_models.diffusion_model.video.ltx2_vae import get_vae
 from sana_wm_diffusion.model.utils import get_weight_dtype
-from openworldlib.base_models.diffusion_model.video.ltx2_refiner import (
+from .....base_models.diffusion_model.video.ltx2_refiner import (
     DiffusersLTX2Refiner,
     STAGE_2_DISTILLED_SIGMA_VALUES,
 )
