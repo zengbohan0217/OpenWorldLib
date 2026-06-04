@@ -280,6 +280,7 @@ class SanaWMSynthesis(BaseSynthesis):
         cls,
         pretrained_model_path: str = HF_REPO,
         device: str = "cuda",
+        text_encoder_path: str | None = None,
         offload_vae: bool = False,
         offload_refiner: bool = False,
         enable_refiner: bool = True,
@@ -350,6 +351,7 @@ class SanaWMSynthesis(BaseSynthesis):
         tokenizer, text_encoder = get_tokenizer_and_text_encoder(
             name=config.text_encoder.text_encoder_name,
             device=device_obj,
+            model_path=text_encoder_path,
         )
         text_encoder.eval()
 

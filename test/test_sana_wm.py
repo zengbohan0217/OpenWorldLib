@@ -19,11 +19,13 @@ from src.openworldlib.pipelines.sana_wm.pipeline_sana_wm import SanaWMPipeline
 
 image_path = "./data/test_case/test_image_case1/ref_image.png"
 pretrained_model_path = "/home/dataset-assist-0/usr/lh/hdl/sana-ckpts"
+gemma_path = "/home/dataset-assist-0/usr/lh/hdl/sana-ckpts/refiner/text_encoder"
 input_image = Image.open(image_path).convert("RGB")
 prompt = "A charming medieval village with cobblestone streets, thatched-roof houses."
 
 pipeline = SanaWMPipeline.from_pretrained(
     model_path=pretrained_model_path,
+    text_encoder_path=gemma_path,
     device="cuda",
     offload_vae=False,
     offload_refiner=False,

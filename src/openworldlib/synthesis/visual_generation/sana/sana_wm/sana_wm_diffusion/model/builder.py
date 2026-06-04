@@ -14,6 +14,8 @@
 #
 # SPDX-License-Identifier: Apache-2.0
 
+import os
+
 import torch
 from mmcv import Registry
 from termcolor import colored
@@ -46,7 +48,7 @@ def build_model(cfg, use_grad_checkpoint=False, use_fp32_attention=False, gc_ste
     return model
 
 
-def get_tokenizer_and_text_encoder(name="T5", device="cuda"):
+def get_tokenizer_and_text_encoder(name="T5", device="cuda", model_path=None):
     text_encoder_dict = {
         "T5": "DeepFloyd/t5-v1_1-xxl",
         "T5-small": "google/t5-v1_1-small",
@@ -61,15 +63,21 @@ def get_tokenizer_and_text_encoder(name="T5", device="cuda"):
         "gemma-2-9b": "google/gemma-2-9b",
         "gemma-2-9b-it": "google/gemma-2-9b-it",
     }
-    assert name in list(text_encoder_dict.keys()), f"not support this text encoder: {name}"
+    # If a local model_path is provided and is a directory, use it directly
+    # instead of the HuggingFace repo name (for offline environments).
+    if model_path is not None and os.path.isdir(model_path):
+        pass  # model_path will be used below
+    else:
+        assert name in list(text_encoder_dict.keys()), f"not support this text encoder: {name}"
     if "T5" in name:
         tokenizer = T5Tokenizer.from_pretrained(text_encoder_dict[name])
         text_encoder = T5EncoderModel.from_pretrained(text_encoder_dict[name], torch_dtype=torch.float16).to(device)
     elif "gemma" in name:
-        tokenizer = AutoTokenizer.from_pretrained(text_encoder_dict[name])
+        load_path = model_path if (model_path is not None and os.path.isdir(model_path)) else text_encoder_dict[name]
+        tokenizer = AutoTokenizer.from_pretrained(load_path)
         tokenizer.padding_side = "right"
         text_encoder = (
-            AutoModelForCausalLM.from_pretrained(text_encoder_dict[name], torch_dtype=torch.bfloat16)
+            AutoModelForCausalLM.from_pretrained(load_path, torch_dtype=torch.bfloat16)
             .get_decoder()
             .to(device)
         )

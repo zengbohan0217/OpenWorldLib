@@ -30,6 +30,7 @@ class SanaWMPipeline:
         cls,
         model_path: str = "Efficient-Large-Model/SANA-WM_bidirectional",
         device: str = "cuda",
+        text_encoder_path: str | None = None,
         **kwargs,
     ) -> "SanaWMPipeline":
 
@@ -38,6 +39,7 @@ class SanaWMPipeline:
         synthesis_model = SanaWMSynthesis.from_pretrained(
             pretrained_model_path=model_path,
             device=device,
+            text_encoder_path=text_encoder_path,
             **kwargs,
         )
 
