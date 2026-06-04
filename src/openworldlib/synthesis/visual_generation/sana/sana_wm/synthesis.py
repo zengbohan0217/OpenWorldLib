@@ -406,7 +406,7 @@ class SanaWMSynthesis(BaseSynthesis):
             gemma_root = root / "refiner" / "text_encoder"
             if (refiner_root / "transformer" / "config.json").is_file():
                 print("[SanaWMSynthesis] Building LTX-2 refiner...")
-                from openworldlib.base_models.diffusion_model.video.ltx2_refiner import (
+                from .....base_models.diffusion_model.video.ltx2_refiner import (
                     DiffusersLTX2Refiner,
                 )
 
