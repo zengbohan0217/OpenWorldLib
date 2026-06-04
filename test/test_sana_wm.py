@@ -11,11 +11,14 @@ import os
 import torch
 from PIL import Image
 from diffusers.utils import export_to_video
-from openworldlib.pipelines.sana_wm.pipeline_sana_wm import SanaWMPipeline
+import sys
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+from src.openworldlib.pipelines.sana_wm.pipeline_sana_wm import SanaWMPipeline
+# from .pipelines.sana_wm.pipeline_sana_wm import SanaWMPipeline
 
 
 image_path = "./data/test_case/test_image_case1/ref_image.png"
-pretrained_model_path = "Efficient-Large-Model/SANA-WM_bidirectional"
+pretrained_model_path = "/home/dataset-assist-0/usr/lh/hdl/sana-ckpts"
 input_image = Image.open(image_path).convert("RGB")
 prompt = "A charming medieval village with cobblestone streets, thatched-roof houses."
 

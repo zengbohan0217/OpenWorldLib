@@ -9,8 +9,8 @@ import torch.nn.functional as F
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.models.modeling_utils import ModelMixin
 
-from sana_wm_diffusion.model.nets.basic_modules import GLUMBConvTemp, Mlp
-from sana_wm_diffusion.utils.logger import get_logger
+from diffusion.model.nets.basic_modules import GLUMBConvTemp, Mlp
+from diffusion.utils.logger import get_logger
 
 from .attention import flash_attention
 
