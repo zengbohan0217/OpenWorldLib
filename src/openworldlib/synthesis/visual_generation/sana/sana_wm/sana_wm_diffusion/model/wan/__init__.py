@@ -1,8 +1,9 @@
-from .attention import flash_attention
+from openworldlib.base_models.diffusion_model.video.wan_2p1.modules.attention import flash_attention
+from openworldlib.base_models.diffusion_model.video.wan_2p1.modules.t5 import T5Decoder, T5Encoder, T5EncoderModel, T5Model
+from openworldlib.base_models.diffusion_model.video.wan_2p1.modules.tokenizers import HuggingfaceTokenizer
+
 from .model import WanLinearAttentionModel, WanModel, init_model_configs
 from .model_wrapper import SanaVideoMSBlock, SanaWanLinearAttentionModel, SanaWanModel
-from .t5 import T5Decoder, T5Encoder, T5EncoderModel, T5Model
-from .tokenizers import HuggingfaceTokenizer
 from .vae import WanVAE
 
 __all__ = [

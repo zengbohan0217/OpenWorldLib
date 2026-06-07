@@ -7,8 +7,6 @@ Usage (no GPU — dry-run only, very slow):
     python test/test_sana_wm.py
 """
 
-from PIL.Image import Image
-
 
 import os
 import torch
