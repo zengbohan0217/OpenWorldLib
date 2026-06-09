@@ -75,6 +75,13 @@ In this document, we list the installation requirements and installation scripts
     <td><code>bash scripts/setup/default_install.sh</code></td>
   </tr>
   <tr>
+    <td align="center">Sana-WM</td>
+    <td align="center">3.10</td>
+    <td align="center">12.1+</td>
+    <td>PyTorch 2.5.1</td>
+    <td><code>bash scripts/setup/sana_wm_install.sh</code></td>
+  </tr>
+  <tr>
     <td align="center">Infinite-World</td>
     <td align="center">3.10</td>
     <td align="center">12.1</td>
