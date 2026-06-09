@@ -9,7 +9,7 @@ import torch.nn.functional as F
 from diffusers.configuration_utils import ConfigMixin, register_to_config
 from diffusers.models.modeling_utils import ModelMixin
 
-from openworldlib.base_models.diffusion_model.video.wan_2p1.modules.attention import flash_attention
+from ........base_models.diffusion_model.video.wan_2p1.modules.attention import flash_attention
 
 from ..nets.basic_modules import GLUMBConvTemp, Mlp
 from ...utils.logger import get_logger

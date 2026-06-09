@@ -5,7 +5,7 @@ from typing import Optional
 import torch
 from omegaconf import OmegaConf
 
-from openworldlib.base_models.diffusion_model.video.wan_2p1.modules.vae import WanVAE as _WanVAE
+from ........base_models.diffusion_model.video.wan_2p1.modules.vae import WanVAE as _WanVAE
 
 __all__ = [
     "WanVAE",

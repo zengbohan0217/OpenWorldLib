@@ -118,7 +118,7 @@ def encode_image(name, image_encoder, images, device="cuda", image_processor=Non
 
 def get_vae(name, model_path, device="cuda", dtype=None, config=None, **kwargs):
     if "LTX2VAE_diffusers" in name:
-        from openworldlib.base_models.diffusion_model.video.ltx2_vae import get_vae as _get
+        from .......base_models.diffusion_model.video.ltx2_vae import get_vae as _get
         assert config is not None, "config.vae is required for LTX2VAE_diffusers"
         return _get(
             model_path=config.vae_pretrained,
@@ -132,7 +132,7 @@ def get_vae(name, model_path, device="cuda", dtype=None, config=None, **kwargs):
 
 def vae_encode(name, vae, images, device="cuda", **kwargs):
     if "LTX2VAE_diffusers" in name:
-        from openworldlib.base_models.diffusion_model.video.ltx2_vae import vae_encode as _encode
+        from .......base_models.diffusion_model.video.ltx2_vae import vae_encode as _encode
         return _encode(vae, images, device=device, **kwargs)
     else:
         raise ValueError(f"Unsupported VAE type for Sana-WM cropped vendor: {name}")
@@ -140,7 +140,7 @@ def vae_encode(name, vae, images, device="cuda", **kwargs):
 
 def vae_decode(name, vae, latent, **kwargs):
     if "LTX2VAE_diffusers" in name:
-        from openworldlib.base_models.diffusion_model.video.ltx2_vae import vae_decode as _decode
+        from .......base_models.diffusion_model.video.ltx2_vae import vae_decode as _decode
         return _decode(vae, latent, **kwargs)
     else:
         raise ValueError(f"Unsupported VAE type for Sana-WM cropped vendor: {name}")
